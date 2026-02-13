@@ -1,0 +1,437 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA00000200000000000001 /* AppPerformanceDiagnosticsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001 /* AppPerformanceDiagnosticsApp.swift */; };
+		AA00000200000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000002 /* ContentView.swift */; };
+		AA00000200000000000003 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000003 /* SidebarView.swift */; };
+		AA00000200000000000004 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000004 /* WelcomeView.swift */; };
+		AA00000200000000000005 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000005 /* DashboardView.swift */; };
+		AA00000200000000000006 /* InstrumentDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000006 /* InstrumentDetailView.swift */; };
+		AA00000200000000000007 /* InstrumentType.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000007 /* InstrumentType.swift */; };
+		AA00000200000000000008 /* DiagnosticIssue.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000008 /* DiagnosticIssue.swift */; };
+		AA00000200000000000009 /* AnalysisResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000009 /* AnalysisResult.swift */; };
+		AA0000020000000000000A /* AppBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000A /* AppBundle.swift */; };
+		AA0000020000000000000B /* AnalysisEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000B /* AnalysisEngine.swift */; };
+		AA0000020000000000000C /* MachOParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000C /* MachOParser.swift */; };
+		AA0000020000000000000D /* BinaryAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000D /* BinaryAnalyzer.swift */; };
+		AA0000020000000000000E /* LeaksAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000E /* LeaksAnalyzer.swift */; };
+		AA0000020000000000000F /* ConcurrencyAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000F /* ConcurrencyAnalyzer.swift */; };
+		AA00000200000000000010 /* AllocationsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000010 /* AllocationsAnalyzer.swift */; };
+		AA00000200000000000011 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000011 /* Extensions.swift */; };
+		AA00000200000000000012 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000012 /* Theme.swift */; };
+		AA00000200000000000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000013 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AA00000100000000000001 /* AppPerformanceDiagnosticsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPerformanceDiagnosticsApp.swift; sourceTree = "<group>"; };
+		AA00000100000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA00000100000000000003 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		AA00000100000000000004 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		AA00000100000000000005 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		AA00000100000000000006 /* InstrumentDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentDetailView.swift; sourceTree = "<group>"; };
+		AA00000100000000000007 /* InstrumentType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentType.swift; sourceTree = "<group>"; };
+		AA00000100000000000008 /* DiagnosticIssue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticIssue.swift; sourceTree = "<group>"; };
+		AA00000100000000000009 /* AnalysisResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisResult.swift; sourceTree = "<group>"; };
+		AA0000010000000000000A /* AppBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBundle.swift; sourceTree = "<group>"; };
+		AA0000010000000000000B /* AnalysisEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisEngine.swift; sourceTree = "<group>"; };
+		AA0000010000000000000C /* MachOParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachOParser.swift; sourceTree = "<group>"; };
+		AA0000010000000000000D /* BinaryAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryAnalyzer.swift; sourceTree = "<group>"; };
+		AA0000010000000000000E /* LeaksAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaksAnalyzer.swift; sourceTree = "<group>"; };
+		AA0000010000000000000F /* ConcurrencyAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcurrencyAnalyzer.swift; sourceTree = "<group>"; };
+		AA00000100000000000010 /* AllocationsAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllocationsAnalyzer.swift; sourceTree = "<group>"; };
+		AA00000100000000000011 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		AA00000100000000000012 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		AA00000100000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA00000100000000000014 /* AppPerformanceDiagnostics.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AppPerformanceDiagnostics.entitlements; sourceTree = "<group>"; };
+		AA00000400000000000001 /* AppPerformanceDiagnostics.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppPerformanceDiagnostics.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA00000500000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA00000300000000000001 /* Root */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000300000000000002 /* AppPerformanceDiagnostics */,
+				AA00000300000000000007 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA00000300000000000002 /* AppPerformanceDiagnostics */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000100000000000001 /* AppPerformanceDiagnosticsApp.swift */,
+				AA00000100000000000014 /* AppPerformanceDiagnostics.entitlements */,
+				AA00000100000000000013 /* Assets.xcassets */,
+				AA00000300000000000003 /* Views */,
+				AA00000300000000000004 /* Models */,
+				AA00000300000000000005 /* Analysis */,
+				AA00000300000000000006 /* Utilities */,
+			);
+			path = AppPerformanceDiagnostics;
+			sourceTree = "<group>";
+		};
+		AA00000300000000000003 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000100000000000002 /* ContentView.swift */,
+				AA00000100000000000003 /* SidebarView.swift */,
+				AA00000100000000000004 /* WelcomeView.swift */,
+				AA00000100000000000005 /* DashboardView.swift */,
+				AA00000100000000000006 /* InstrumentDetailView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		AA00000300000000000004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000100000000000007 /* InstrumentType.swift */,
+				AA00000100000000000008 /* DiagnosticIssue.swift */,
+				AA00000100000000000009 /* AnalysisResult.swift */,
+				AA0000010000000000000A /* AppBundle.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AA00000300000000000005 /* Analysis */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000B /* AnalysisEngine.swift */,
+				AA0000010000000000000C /* MachOParser.swift */,
+				AA0000010000000000000D /* BinaryAnalyzer.swift */,
+				AA0000010000000000000E /* LeaksAnalyzer.swift */,
+				AA0000010000000000000F /* ConcurrencyAnalyzer.swift */,
+				AA00000100000000000010 /* AllocationsAnalyzer.swift */,
+			);
+			path = Analysis;
+			sourceTree = "<group>";
+		};
+		AA00000300000000000006 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000100000000000011 /* Extensions.swift */,
+				AA00000100000000000012 /* Theme.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		AA00000300000000000007 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000400000000000001 /* AppPerformanceDiagnostics.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA00000600000000000001 /* AppPerformanceDiagnostics */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000700000000000004 /* Build configuration list for PBXNativeTarget "AppPerformanceDiagnostics" */;
+			buildPhases = (
+				AA00000500000000000001 /* Sources */,
+				AA00000500000000000002 /* Frameworks */,
+				AA00000500000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AppPerformanceDiagnostics;
+			productName = AppPerformanceDiagnostics;
+			productReference = AA00000400000000000001 /* AppPerformanceDiagnostics.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA00000800000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1530;
+				LastUpgradeCheck = 1530;
+				TargetAttributes = {
+					AA00000600000000000001 = {
+						CreatedOnToolsVersion = 15.3;
+					};
+				};
+			};
+			buildConfigurationList = AA00000700000000000003 /* Build configuration list for PBXProject "AppPerformanceDiagnostics" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA00000300000000000001 /* Root */;
+			productRefGroup = AA00000300000000000007 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA00000600000000000001 /* AppPerformanceDiagnostics */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA00000500000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000200000000000013 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA00000500000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000200000000000001 /* AppPerformanceDiagnosticsApp.swift in Sources */,
+				AA00000200000000000002 /* ContentView.swift in Sources */,
+				AA00000200000000000003 /* SidebarView.swift in Sources */,
+				AA00000200000000000004 /* WelcomeView.swift in Sources */,
+				AA00000200000000000005 /* DashboardView.swift in Sources */,
+				AA00000200000000000006 /* InstrumentDetailView.swift in Sources */,
+				AA00000200000000000007 /* InstrumentType.swift in Sources */,
+				AA00000200000000000008 /* DiagnosticIssue.swift in Sources */,
+				AA00000200000000000009 /* AnalysisResult.swift in Sources */,
+				AA0000020000000000000A /* AppBundle.swift in Sources */,
+				AA0000020000000000000B /* AnalysisEngine.swift in Sources */,
+				AA0000020000000000000C /* MachOParser.swift in Sources */,
+				AA0000020000000000000D /* BinaryAnalyzer.swift in Sources */,
+				AA0000020000000000000E /* LeaksAnalyzer.swift in Sources */,
+				AA0000020000000000000F /* ConcurrencyAnalyzer.swift in Sources */,
+				AA00000200000000000010 /* AllocationsAnalyzer.swift in Sources */,
+				AA00000200000000000011 /* Extensions.swift in Sources */,
+				AA00000200000000000012 /* Theme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA00000700000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppPerformanceDiagnostics/AppPerformanceDiagnostics.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "App Performance Diagnostics";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.diagnostics.AppPerformanceDiagnostics;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AA00000700000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppPerformanceDiagnostics/AppPerformanceDiagnostics.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "App Performance Diagnostics";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.diagnostics.AppPerformanceDiagnostics;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AA00000700000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA00000700000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA00000700000000000003 /* Build configuration list for PBXProject "AppPerformanceDiagnostics" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00000700000000000005 /* Debug */,
+				AA00000700000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000700000000000004 /* Build configuration list for PBXNativeTarget "AppPerformanceDiagnostics" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00000700000000000001 /* Debug */,
+				AA00000700000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = AA00000800000000000001 /* Project object */;
+}
