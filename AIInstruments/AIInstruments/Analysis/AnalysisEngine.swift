@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Orchestrates all diagnostic analyses on an iOS app bundle.
 /// Parses the Mach-O binary, runs each instrument analyzer, and produces an aggregated report.

@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Main content view with navigation split view layout.
 struct ContentView: View {
