@@ -446,8 +446,11 @@ final class MachOParser {
                         strings.append(current)
                         current = ""
                     }
-                } else if let scalar = Unicode.Scalar(byte), scalar.isASCII {
-                    current.append(Character(scalar))
+                } else {
+                    let scalar = Unicode.Scalar(byte)
+                    if scalar.isASCII {
+                        current.append(Character(scalar))
+                    }
                 }
             }
 
@@ -475,8 +478,11 @@ final class MachOParser {
                             classes.append(current)
                             current = ""
                         }
-                    } else if let scalar = Unicode.Scalar(byte), scalar.isASCII {
-                        current.append(Character(scalar))
+                    } else {
+                        let scalar = Unicode.Scalar(byte)
+                        if scalar.isASCII {
+                            current.append(Character(scalar))
+                        }
                     }
                 }
                 if !current.isEmpty {
@@ -515,8 +521,11 @@ final class MachOParser {
                     selectors.append(current)
                     current = ""
                 }
-            } else if let scalar = Unicode.Scalar(byte), scalar.isASCII {
-                current.append(Character(scalar))
+            } else {
+                let scalar = Unicode.Scalar(byte)
+                if scalar.isASCII {
+                    current.append(Character(scalar))
+                }
             }
         }
 

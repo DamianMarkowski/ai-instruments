@@ -66,7 +66,7 @@ struct WelcomeView: View {
                     )
             }
 
-            Text("App Performance Diagnostics")
+            Text("AI Instruments")
                 .font(Theme.Typography.largeTitle)
 
             Text("AI-driven static analysis for iOS applications")

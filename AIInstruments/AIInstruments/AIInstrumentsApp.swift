@@ -1,10 +1,3 @@
-//
-//  AIInstrumentsApp.swift
-//  AIInstruments
-//
-//  Created by Damian Markowski on 12/02/2026.
-//
-
 import SwiftUI
 
 @main
@@ -13,5 +6,24 @@ struct AIInstrumentsApp: App {
         WindowGroup {
             ContentView()
         }
+        .windowStyle(.titleBar)
+        .defaultSize(width: 1200, height: 750)
+        .commands {
+            CommandGroup(replacing: .newItem) {}
+
+            CommandMenu("Analysis") {
+                Button("New Analysis...") {
+                    NotificationCenter.default.post(
+                        name: .newAnalysisRequested,
+                        object: nil
+                    )
+                }
+                .keyboardShortcut("n", modifiers: [.command])
+            }
+        }
     }
+}
+
+extension Notification.Name {
+    static let newAnalysisRequested = Notification.Name("newAnalysisRequested")
 }
