@@ -117,7 +117,7 @@ struct ContentView: View {
     private func generateReportText(_ report: AnalysisReport) -> String {
         var text = """
         ═══════════════════════════════════════════════
-        App Performance Diagnostics Report
+        AI Instruments Report
         ═══════════════════════════════════════════════
 
         App: \(report.appName)
