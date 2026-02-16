@@ -99,6 +99,73 @@ struct MachOParserTests {
         expect(info.isValid).to(beFalse())
     }
 
+    @Test("Parsing FAT64 binary picks arm64 slice")
+    func fat64Arm64Slice() {
+        var data = Data()
+        var magic: UInt32 = 0xCAFEBABF
+        data.append(Data(bytes: &magic, count: 4))
+
+        var nfatArch: UInt32 = 1
+        data.append(Data(bytes: &nfatArch, count: 4))
+
+        // fat_arch_64 entry (32 bytes)
+        var cpuType: UInt32 = 0x0100000C // arm64
+        data.append(Data(bytes: &cpuType, count: 4))
+        var cpuSubtype: UInt32 = 0
+        data.append(Data(bytes: &cpuSubtype, count: 4))
+        var offset: UInt64 = 64
+        data.append(Data(bytes: &offset, count: 8))
+
+        let machO = makeMinimalMachO64()
+        var size: UInt64 = UInt64(machO.count)
+        data.append(Data(bytes: &size, count: 8))
+        var align: UInt32 = 14
+        data.append(Data(bytes: &align, count: 4))
+        var reserved: UInt32 = 0
+        data.append(Data(bytes: &reserved, count: 4))
+
+        if data.count < Int(offset) {
+            data.append(Data(repeating: 0, count: Int(offset) - data.count))
+        }
+        data.append(machO)
+
+        let parser = MachOParser(data: data)
+        let info = parser.parse()
+        expect(info.isValid).to(beTrue())
+        expect(info.isFatBinary).to(beTrue())
+        expect(info.architecture).to(equal("arm64"))
+    }
+
+    @Test("Parsing Mach-O with invalid command size returns invalid")
+    func invalidLoadCommandSize() {
+        var data = Data()
+        var magic: UInt32 = 0xFEEDFACF
+        data.append(Data(bytes: &magic, count: 4))
+        var cpuType: UInt32 = 0x0100000C
+        data.append(Data(bytes: &cpuType, count: 4))
+        var cpuSubtype: UInt32 = 0
+        data.append(Data(bytes: &cpuSubtype, count: 4))
+        var fileType: UInt32 = 0x02
+        data.append(Data(bytes: &fileType, count: 4))
+        var ncmds: UInt32 = 1
+        data.append(Data(bytes: &ncmds, count: 4))
+        var sizeofcmds: UInt32 = 8
+        data.append(Data(bytes: &sizeofcmds, count: 4))
+        var flags: UInt32 = 0
+        data.append(Data(bytes: &flags, count: 4))
+        var reserved: UInt32 = 0
+        data.append(Data(bytes: &reserved, count: 4))
+
+        var cmd: UInt32 = 0x19
+        data.append(Data(bytes: &cmd, count: 4))
+        var invalidCmdSize: UInt32 = 4 // Invalid (< 8)
+        data.append(Data(bytes: &invalidCmdSize, count: 4))
+
+        let parser = MachOParser(data: data)
+        let info = parser.parse()
+        expect(info.isValid).to(beFalse())
+    }
+
     @Test("DefaultMachOParserService delegates to MachOParser")
     func defaultParserService() {
         let service = DefaultMachOParserService()

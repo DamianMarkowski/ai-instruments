@@ -7,6 +7,7 @@ private let MH_CIGAM_64: UInt32    = 0xCFFAEDFE
 private let FAT_MAGIC: UInt32      = 0xCAFEBABE
 private let FAT_CIGAM: UInt32      = 0xBEBAFECA
 private let FAT_MAGIC_64: UInt32   = 0xCAFEBABF
+private let FAT_CIGAM_64: UInt32   = 0xBFBAFECA
 
 private let MH_EXECUTE: UInt32     = 0x02
 private let MH_DYLIB: UInt32       = 0x06
@@ -135,7 +136,7 @@ final class MachOParser {
         let magic = readUInt32(at: 0)
 
         // Check for fat/universal binary
-        if magic == FAT_MAGIC || magic == FAT_CIGAM || magic == FAT_MAGIC_64 {
+        if magic == FAT_MAGIC || magic == FAT_CIGAM || magic == FAT_MAGIC_64 || magic == FAT_CIGAM_64 {
             return parseFatBinary(magic: magic)
         }
 
@@ -151,11 +152,13 @@ final class MachOParser {
     // MARK: - Fat Binary Parsing
 
     private func parseFatBinary(magic: UInt32) -> MachOInfo {
-        let needsSwap = (magic == FAT_CIGAM)
+        let isFat64 = (magic == FAT_MAGIC_64 || magic == FAT_CIGAM_64)
+        let needsSwap = (magic == FAT_CIGAM || magic == FAT_CIGAM_64)
 
         guard data.count >= 8 else { return .invalid }
 
         let nfatArch = readUInt32(at: 4, swap: needsSwap)
+        guard nfatArch > 0 else { return .invalid }
 
         // Look for arm64 slice first, then x86_64
         var arm64Offset: UInt64 = 0
@@ -163,40 +166,48 @@ final class MachOParser {
         var foundArm64 = false
         var foundX86 = false
 
+        let archEntrySize = isFat64 ? 32 : 20
+        let maxArchitectures = min(Int(nfatArch), 4096)
         var archOffset = 8
-        for _ in 0..<nfatArch {
-            guard archOffset + 20 <= data.count else { break }
+        for _ in 0..<maxArchitectures {
+            guard archOffset + archEntrySize <= data.count else { break }
 
             let cpuType = readUInt32(at: archOffset, swap: needsSwap)
-            let sliceOffset = readUInt32(at: archOffset + 8, swap: needsSwap)
+            let sliceOffset: UInt64
+            if isFat64 {
+                sliceOffset = readUInt64(at: archOffset + 8, swap: needsSwap)
+            } else {
+                sliceOffset = UInt64(readUInt32(at: archOffset + 8, swap: needsSwap))
+            }
 
             if cpuType == CPU_TYPE_ARM64 {
-                arm64Offset = UInt64(sliceOffset)
+                arm64Offset = sliceOffset
                 foundArm64 = true
             } else if cpuType == CPU_TYPE_X86_64 {
-                x86Offset = UInt64(sliceOffset)
+                x86Offset = sliceOffset
                 foundX86 = true
             }
 
-            archOffset += 20
+            archOffset += archEntrySize
         }
 
-        let targetOffset: Int
+        let targetOffset64: UInt64
         if foundArm64 {
-            targetOffset = Int(arm64Offset)
+            targetOffset64 = arm64Offset
         } else if foundX86 {
-            targetOffset = Int(x86Offset)
+            targetOffset64 = x86Offset
         } else {
             return .invalid
         }
 
+        guard targetOffset64 <= UInt64(Int.max) else { return .invalid }
+        let targetOffset = Int(targetOffset64)
         guard targetOffset < data.count else { return .invalid }
 
         let sliceMagic = readUInt32(at: targetOffset)
         if sliceMagic == MH_MAGIC_64 || sliceMagic == MH_CIGAM_64 {
             shouldSwapBytes = (sliceMagic == MH_CIGAM_64)
-            var result = parseMachO64(at: targetOffset, isFat: true)
-            return result
+            return parseMachO64(at: targetOffset, isFat: true)
         }
 
         return .invalid
@@ -212,6 +223,9 @@ final class MachOParser {
         let fileType = readUInt32(at: baseOffset + 12)
         let ncmds = readUInt32(at: baseOffset + 16)
         let sizeOfCmds = readUInt32(at: baseOffset + 20)
+        let maxLoadCommands: UInt32 = 10_000
+
+        guard ncmds <= maxLoadCommands else { return .invalid }
 
         let architecture: String
         switch cpuType {
@@ -236,12 +250,21 @@ final class MachOParser {
         var strtabSize: UInt32 = 0
         var isEncrypted = false
 
-        var cmdOffset = baseOffset + 32 // sizeof(mach_header_64)
-        for _ in 0..<ncmds {
-            guard cmdOffset + 8 <= data.count else { break }
+        let cmdStart = baseOffset + 32 // sizeof(mach_header_64)
+        let cmdEnd = cmdStart + Int(sizeOfCmds)
+        guard cmdEnd >= cmdStart, cmdEnd <= data.count else { return .invalid }
+
+        var cmdOffset = cmdStart
+        var parsedCommands: UInt32 = 0
+        while parsedCommands < ncmds {
+            guard cmdOffset + 8 <= cmdEnd else { return .invalid }
 
             let cmd = readUInt32(at: cmdOffset)
             let cmdSize = readUInt32(at: cmdOffset + 4)
+            guard cmdSize >= 8 else { return .invalid }
+            let cmdSizeInt = Int(cmdSize)
+            let nextOffset = cmdOffset + cmdSizeInt
+            guard nextOffset >= cmdOffset, nextOffset <= cmdEnd else { return .invalid }
 
             switch cmd {
             case LC_SEGMENT_64:
@@ -270,7 +293,8 @@ final class MachOParser {
                 break
             }
 
-            cmdOffset += Int(cmdSize)
+            cmdOffset = nextOffset
+            parsedCommands += 1
         }
 
         // Parse symbol table
@@ -686,13 +710,14 @@ final class MachOParser {
         return doSwap ? value.byteSwapped : value
     }
 
-    private func readUInt64(at offset: Int) -> UInt64 {
+    private func readUInt64(at offset: Int, swap: Bool? = nil) -> UInt64 {
         guard offset + 8 <= data.count else { return 0 }
         var value: UInt64 = 0
         _ = withUnsafeMutableBytes(of: &value) { dest in
             data.copyBytes(to: dest, from: offset..<(offset + 8))
         }
-        return shouldSwapBytes ? value.byteSwapped : value
+        let doSwap = swap ?? shouldSwapBytes
+        return doSwap ? value.byteSwapped : value
     }
 
     private func readString(at offset: Int, maxLength: Int) -> String {

@@ -154,8 +154,15 @@ final class BinaryAnalyzer {
 
     /// Count matches across symbols, ObjC selectors, and extracted strings.
     func countAllEvidence(matchingAny patterns: [String]) -> Int {
-        findSymbols(matchingAny: patterns).count
+        let loweredPatterns = patterns.map { $0.lowercased() }
+        let stringMatches = machOInfo.extractedStrings.filter { candidate in
+            let loweredCandidate = candidate.lowercased()
+            return loweredPatterns.contains { loweredCandidate.contains($0) }
+        }.count
+
+        return findSymbols(matchingAny: patterns).count
             + findSelectors(matchingAny: patterns).count
+            + stringMatches
     }
 
     // MARK: - Combined Class / Type Analysis
