@@ -40,4 +40,7 @@ jobs:
             -project "AIInstruments.xcodeproj" \
             -scheme "AIInstruments" \
             -destination "platform=macOS" \
-            -only-testing:AIInstrumentsTests
+            -only-testing:AIInstrumentsTests \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
