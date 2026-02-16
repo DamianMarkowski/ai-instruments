@@ -110,3 +110,7 @@ xcodebuild test -project "AIInstruments.xcodeproj" -scheme "AIInstruments" -dest
 - Analysis quality depends on symbol/string availability in the binary.
 - Encrypted App Store binaries are not analyzable until decrypted.
 - Findings are risk indicators, not guaranteed runtime bugs.
+
+## Feedback and contribution
+
+I'm always open to receiving feedback and contribution to my project so please feel free to open Pull Requests, raise Issues or reach out to me on X https://x.com/damianmarkowski. Thanks!
