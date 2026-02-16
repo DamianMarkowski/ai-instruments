@@ -1,0 +1,38 @@
+name: AIInstruments Tests
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "AIInstruments/**"
+      - ".github/workflows/aiinstruments-tests.yml"
+  pull_request:
+    paths:
+      - "AIInstruments/**"
+      - ".github/workflows/aiinstruments-tests.yml"
+
+jobs:
+  unit-tests:
+    name: Run AIInstrumentsTests
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Resolve Swift package dependencies
+        working-directory: AIInstruments
+        run: xcodebuild -resolvePackageDependencies -project "AIInstruments.xcodeproj"
+
+      - name: Run AIInstruments unit tests
+        working-directory: AIInstruments
+        run: |
+          xcodebuild test \
+            -project "AIInstruments.xcodeproj" \
+            -scheme "AIInstruments" \
+            -destination "platform=macOS" \
+            -only-testing:AIInstrumentsTests
