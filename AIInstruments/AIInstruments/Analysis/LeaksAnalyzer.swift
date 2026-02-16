@@ -41,7 +41,8 @@ final class LeaksAnalyzer {
             analysisTimeSeconds: elapsed,
             metadata: [
                 "totalSymbolsAnalyzed": "\(analyzer.machOInfo.symbols.count)",
-                "classesAnalyzed": "\(analyzer.objcClassCount)",
+                "classesAnalyzed": "\(analyzer.allClassNames.count)",
+                "selectorsAnalyzed": "\(analyzer.machOInfo.objcSelectors.count)",
                 "delegatePatterns": "\(analyzer.findSymbols(matching: "delegate").count)"
             ]
         )
@@ -57,35 +58,52 @@ final class LeaksAnalyzer {
             "delegate", "Delegate", "dataSource", "DataSource"
         ])
 
-        // Find setters for delegate properties (strong delegates have regular setters)
-        let delegateSetters = delegateSymbols.filter {
-            $0.name.contains("set") && ($0.name.contains("Delegate") || $0.name.contains("delegate") ||
-            $0.name.contains("DataSource") || $0.name.contains("dataSource"))
+        // Also check ObjC selectors for delegate-related patterns
+        let delegateSelectors = analyzer.findSelectors(matchingAny: [
+            "setDelegate", "setDataSource", "delegate", "dataSource"
+        ])
+
+        // Find setters for delegate properties:
+        //   ObjC style: contains "set" + "Delegate"/"dataSource"
+        //   Swift style: symbol ends with "vs" (setter) or "vM" (modify accessor)
+        let delegateSetters = delegateSymbols.filter { sym in
+            let name = sym.name
+            let hasDelegateKey = name.contains("Delegate") || name.contains("delegate") ||
+                name.contains("DataSource") || name.contains("dataSource")
+            guard hasDelegateKey else { return false }
+            return name.contains("set") || name.hasSuffix("vs") || name.hasSuffix("vM")
+        }
+
+        // ObjC setter selectors (e.g. "setDelegate:")
+        let delegateSetterSelectors = delegateSelectors.filter {
+            $0.lowercased().hasPrefix("set")
         }
 
         // Check if there are corresponding weak references
         let weakSymbols = analyzer.findSymbols(matchingAny: ["weak", ".weak_"])
 
-        let potentiallyStrongDelegates = delegateSetters.filter { setter in
+        let potentiallyStrongDelegates = delegateSetters.filter { _ in
             !weakSymbols.contains { $0.name.contains("delegate") || $0.name.contains("Delegate") }
         }
 
-        if !potentiallyStrongDelegates.isEmpty {
-            let viewControllers = analyzer.findViewControllerClasses()
+        let totalEvidence = potentiallyStrongDelegates.count + delegateSetterSelectors.count
+
+        if totalEvidence > 0 {
+            let viewControllers = analyzer.findAllViewControllerClasses()
             let isInVC = !viewControllers.isEmpty
 
             issues.append(DiagnosticIssue(
                 title: "Potential Strong Delegate References",
-                description: "Found \(potentiallyStrongDelegates.count) delegate/dataSource property setter(s) that may use strong references. Strong delegate references are a common source of retain cycles.",
+                description: "Found \(totalEvidence) delegate/dataSource property setter(s) that may use strong references. Strong delegate references are a common source of retain cycles.",
                 severity: isInVC ? .warning : .info,
                 instrument: .leaks,
                 category: "Strong Delegates",
                 recommendation: "Ensure all delegate and dataSource properties are declared as `weak`. Use `weak var delegate: SomeProtocol?` to prevent retain cycles between objects and their delegates.",
                 impact: "Strong delegate references create mutual strong references between an object and its delegate, preventing both from being deallocated.",
-                confidence: analyzer.confidenceScore(evidenceCount: potentiallyStrongDelegates.count, lowThreshold: 1, highThreshold: 5),
+                confidence: analyzer.confidenceScore(evidenceCount: totalEvidence, lowThreshold: 1, highThreshold: 5),
                 relatedSymbols: Array(potentiallyStrongDelegates.prefix(10).map(\.name)),
                 details: [
-                    .init(key: "Delegate Setters Found", value: "\(potentiallyStrongDelegates.count)"),
+                    .init(key: "Delegate Setters Found", value: "\(totalEvidence)"),
                     .init(key: "View Controllers", value: "\(viewControllers.count)"),
                     .init(key: "Risk Level", value: isInVC ? "High - ViewController involvement" : "Medium")
                 ]
@@ -106,13 +124,20 @@ final class LeaksAnalyzer {
             "__copy_helper_block", "__destroy_helper_block"
         ])
 
+        // Swift closures in mangled names use "fU" (closure), "fU_" (closure #1),
+        // "fU0_" (closure #2), etc. Also check for demangled "closure #" patterns.
         let closureSymbols = analyzer.findSymbols(matchingAny: [
             "closure #", "implicit closure"
         ])
 
-        let totalClosures = blockSymbols.count + closureSymbols.count
+        // Also detect Swift closures by their mangled signature (fU indicates a closure)
+        let swiftClosures = analyzer.machOInfo.symbols.filter {
+            $0.name.contains("fU_") || $0.name.contains("fU0_") || $0.name.contains("fU1_")
+        }
 
-        if totalClosures > 20 {
+        let totalClosures = blockSymbols.count + closureSymbols.count + swiftClosures.count
+
+        if totalClosures > 5 {
             // Look for closures that reference self patterns
             let selfCaptures = analyzer.findSymbols(matchingAny: [
                 "objectdestroy", "swift_release", "swift_retain"
@@ -167,30 +192,39 @@ final class LeaksAnalyzer {
     private func analyzeNotificationObservers() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        let addObserverPatterns = analyzer.findSymbols(matchingAny: [
+        // Search both symbols and ObjC selectors for observer patterns
+        let addObserverSymbols = analyzer.findSymbols(matchingAny: [
             "addObserver", "addObserverForName", "NotificationCenter"
         ])
+        let addObserverSelectors = analyzer.findSelectors(matchingAny: [
+            "addObserver"
+        ])
+        let totalAdd = addObserverSymbols.count + addObserverSelectors.count
 
-        let removeObserverPatterns = analyzer.findSymbols(matchingAny: [
+        let removeObserverSymbols = analyzer.findSymbols(matchingAny: [
             "removeObserver"
         ])
+        let removeObserverSelectors = analyzer.findSelectors(matchingAny: [
+            "removeObserver"
+        ])
+        let totalRemove = removeObserverSymbols.count + removeObserverSelectors.count
 
-        if addObserverPatterns.count > removeObserverPatterns.count {
-            let imbalance = addObserverPatterns.count - removeObserverPatterns.count
+        if totalAdd > totalRemove {
+            let imbalance = totalAdd - totalRemove
 
             issues.append(DiagnosticIssue(
                 title: "NotificationCenter Observer Imbalance",
-                description: "Found \(addObserverPatterns.count) addObserver calls but only \(removeObserverPatterns.count) removeObserver calls. This suggests \(imbalance) observer(s) may not be properly cleaned up.",
+                description: "Found \(totalAdd) addObserver calls but only \(totalRemove) removeObserver calls. This suggests \(imbalance) observer(s) may not be properly cleaned up.",
                 severity: imbalance > 3 ? .warning : .info,
                 instrument: .leaks,
                 category: "Notification Observers",
                 recommendation: "Ensure every NotificationCenter.addObserver has a corresponding removeObserver, typically in deinit or viewWillDisappear. Consider using the block-based API with `NotificationCenter.default.addObserver(forName:object:queue:using:)` and storing the returned token for later removal.",
                 impact: "Orphaned notification observers can prevent objects from being deallocated and may cause crashes when notifications are posted to deallocated objects.",
                 confidence: analyzer.confidenceScore(evidenceCount: imbalance, lowThreshold: 1, highThreshold: 5),
-                relatedSymbols: Array(addObserverPatterns.prefix(5).map(\.name)),
+                relatedSymbols: Array(addObserverSymbols.prefix(5).map(\.name)),
                 details: [
-                    .init(key: "addObserver Calls", value: "\(addObserverPatterns.count)"),
-                    .init(key: "removeObserver Calls", value: "\(removeObserverPatterns.count)"),
+                    .init(key: "addObserver Calls", value: "\(totalAdd)"),
+                    .init(key: "removeObserver Calls", value: "\(totalRemove)"),
                     .init(key: "Imbalance", value: "\(imbalance)")
                 ]
             ))
@@ -204,21 +238,33 @@ final class LeaksAnalyzer {
     private func analyzeTimerRetainCycles() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
+        // Search symbols for timer patterns
         let timerSymbols = analyzer.findSymbols(matchingAny: [
-            "scheduledTimer", "Timer.init", "NSTimer", "timerWithTimeInterval",
+            "scheduledTimer", "NSTimer", "timerWithTimeInterval",
             "scheduledTimerWithTimeInterval"
         ])
+
+        // Also search ObjC selectors (Swift calls to Timer/NSTimer generate selectors)
+        let timerSelectors = analyzer.findSelectors(matchingAny: [
+            "scheduledTimer", "timerWithTimeInterval"
+        ])
+
+        let totalTimer = timerSymbols.count + timerSelectors.count
 
         let invalidateSymbols = analyzer.findSymbols(matchingAny: [
             "invalidate"
         ])
+        let invalidateSelectors = analyzer.findSelectors(matchingAny: [
+            "invalidate"
+        ])
+        let totalInvalidate = invalidateSymbols.count + invalidateSelectors.count
 
-        if !timerSymbols.isEmpty {
-            let repeatingTimerRisk = timerSymbols.count > invalidateSymbols.count
+        if totalTimer > 0 {
+            let repeatingTimerRisk = totalTimer > totalInvalidate
 
             issues.append(DiagnosticIssue(
                 title: "Timer Usage Detected - Potential Retain Cycle",
-                description: "Found \(timerSymbols.count) timer creation pattern(s). NSTimer/Timer strongly retains its target, which can create retain cycles if the target also retains the timer.",
+                description: "Found \(totalTimer) timer creation pattern(s). NSTimer/Timer strongly retains its target, which can create retain cycles if the target also retains the timer.",
                 severity: repeatingTimerRisk ? .warning : .suggestion,
                 instrument: .leaks,
                 category: "Timer Retain Cycles",
@@ -227,8 +273,8 @@ final class LeaksAnalyzer {
                 confidence: 0.7,
                 relatedSymbols: Array(timerSymbols.prefix(5).map(\.name)),
                 details: [
-                    .init(key: "Timer Creations", value: "\(timerSymbols.count)"),
-                    .init(key: "Invalidate Calls", value: "\(invalidateSymbols.count)")
+                    .init(key: "Timer Creations", value: "\(totalTimer)"),
+                    .init(key: "Invalidate Calls", value: "\(totalInvalidate)")
                 ]
             ))
         }
@@ -241,8 +287,9 @@ final class LeaksAnalyzer {
     private func analyzeCircularReferences() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        let classes = analyzer.machOInfo.objcClasses
-        let viewControllers = analyzer.findViewControllerClasses()
+        // Use combined ObjC + Swift class names to cover pure Swift classes too
+        let classes = analyzer.allClassNames
+        let viewControllers = analyzer.findAllViewControllerClasses()
 
         // Check for coordinator/router patterns (common retain cycle source)
         let coordinators = classes.filter {
@@ -272,7 +319,7 @@ final class LeaksAnalyzer {
             $0.contains("Manager") || $0.contains("Service") || $0.contains("Store")
         }
 
-        if managers.count > 5 {
+        if managers.count > 3 {
             issues.append(DiagnosticIssue(
                 title: "Complex Object Graph Detected",
                 description: "Found \(managers.count) manager/service/store classes. Complex object graphs with many interconnected services increase the risk of retain cycles.",
@@ -330,36 +377,35 @@ final class LeaksAnalyzer {
     private func analyzeBlockBasedAPIs() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        // Check for UIView animation blocks (common capture site)
-        let animationBlocks = analyzer.findSymbols(matchingAny: [
-            "animateWithDuration", "UIView.animate", "UIViewPropertyAnimator"
+        // Check for UIView animation blocks (common capture site) - search symbols + selectors
+        let animationBlocks = analyzer.countAllEvidence(matchingAny: [
+            "animateWithDuration", "UIViewPropertyAnimator"
         ])
 
-        let networkBlocks = analyzer.findSymbols(matchingAny: [
+        let networkBlocks = analyzer.countAllEvidence(matchingAny: [
             "dataTaskWith", "URLSession", "downloadTaskWith", "uploadTaskWith"
         ])
 
-        let gcdBlocks = analyzer.findSymbols(matchingAny: [
+        let gcdBlocks = analyzer.countAllEvidence(matchingAny: [
             "dispatch_async", "dispatch_after", "DispatchQueue"
         ])
 
-        let totalAsyncBlocks = animationBlocks.count + networkBlocks.count + gcdBlocks.count
+        let totalAsyncBlocks = animationBlocks + networkBlocks + gcdBlocks
 
-        if totalAsyncBlocks > 15 {
+        if totalAsyncBlocks > 3 {
             issues.append(DiagnosticIssue(
                 title: "Heavy Asynchronous Block Usage",
-                description: "Found extensive use of asynchronous APIs (\(totalAsyncBlocks) patterns): \(animationBlocks.count) animations, \(networkBlocks.count) network operations, \(gcdBlocks.count) GCD dispatches. Each async block is a potential capture site.",
+                description: "Found extensive use of asynchronous APIs (\(totalAsyncBlocks) patterns): \(animationBlocks) animations, \(networkBlocks) network operations, \(gcdBlocks) GCD dispatches. Each async block is a potential capture site.",
                 severity: .suggestion,
                 instrument: .leaks,
                 category: "Block Captures",
                 recommendation: "Review completion handlers and async blocks for strong self captures. Use `[weak self]` in long-running operations. For short-lived operations (animations), strong captures are generally safe.",
                 impact: "Asynchronous blocks that capture `self` keep the object alive until the operation completes, which may not be the desired behavior for dismissed view controllers or cancelled operations.",
                 confidence: 0.5,
-                relatedSymbols: Array((animationBlocks + networkBlocks + gcdBlocks).prefix(8).map(\.name)),
                 details: [
-                    .init(key: "Animation Blocks", value: "\(animationBlocks.count)"),
-                    .init(key: "Network Blocks", value: "\(networkBlocks.count)"),
-                    .init(key: "GCD Blocks", value: "\(gcdBlocks.count)")
+                    .init(key: "Animation Blocks", value: "\(animationBlocks)"),
+                    .init(key: "Network Blocks", value: "\(networkBlocks)"),
+                    .init(key: "GCD Blocks", value: "\(gcdBlocks)")
                 ]
             ))
         }
@@ -372,7 +418,7 @@ final class LeaksAnalyzer {
     private func analyzeViewControllerLifecycle() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        let viewControllers = analyzer.findViewControllerClasses()
+        let viewControllers = analyzer.findAllViewControllerClasses()
         let deinitSymbols = analyzer.findSymbols(matchingAny: ["deinit", "__deallocating_deinit"])
 
         if !viewControllers.isEmpty {

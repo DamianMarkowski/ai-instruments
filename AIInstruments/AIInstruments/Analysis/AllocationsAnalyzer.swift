@@ -95,60 +95,59 @@ final class AllocationsAnalyzer {
     private func analyzeImageLoading() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        let imageLoadSymbols = analyzer.findSymbols(matchingAny: [
+        // Search both symbols and ObjC selectors for image loading patterns
+        let imageLoadCount = analyzer.countAllEvidence(matchingAny: [
             "UIImage", "imageNamed", "imageWithContentsOfFile",
             "imageWithData", "CGImageSource", "ImageIO",
             "NSImage", "CIImage", "CGImage"
         ])
 
-        let imageResizeSymbols = analyzer.findSymbols(matchingAny: [
-            "drawInRect", "draw(in:", "resizableImage", "preparingThumbnail",
+        let imageResizeCount = analyzer.countAllEvidence(matchingAny: [
+            "drawInRect", "resizableImage", "preparingThumbnail",
             "byPreparingThumbnail", "CGImageSourceCreateThumbnail",
             "UIGraphicsImageRenderer", "CGContext"
         ])
 
-        let imageDownsampleSymbols = analyzer.findSymbols(matchingAny: [
+        let imageDownsampleCount = analyzer.countAllEvidence(matchingAny: [
             "kCGImageSourceThumbnailMaxPixelSize",
             "kCGImageSourceCreateThumbnailFromImageAlways",
             "preparingThumbnail"
         ])
 
-        if imageLoadSymbols.count > 15 && imageDownsampleSymbols.count < 3 {
+        if imageLoadCount > 3 && imageDownsampleCount < 2 {
             issues.append(DiagnosticIssue(
                 title: "Heavy Image Loading Without Downsampling",
-                description: "Found \(imageLoadSymbols.count) image loading operations but limited downsampling (\(imageDownsampleSymbols.count) patterns). Large images decoded at full resolution consume significant memory.",
+                description: "Found \(imageLoadCount) image loading operations but limited downsampling (\(imageDownsampleCount) patterns). Large images decoded at full resolution consume significant memory.",
                 severity: .warning,
                 instrument: .allocations,
                 category: "Image Loading",
                 recommendation: "Use `UIImage.preparingThumbnail(of:)` (iOS 15+) or `CGImageSourceCreateThumbnailAtIndex` with `kCGImageSourceThumbnailMaxPixelSize` to downsample images to display size before decoding. A 12MP photo decoded at full resolution uses ~48MB of memory.",
                 impact: "Full-resolution image decoding is one of the largest sources of memory spikes in iOS apps. Decoding images larger than the display size wastes memory proportional to the resolution difference.",
-                confidence: analyzer.confidenceScore(evidenceCount: imageLoadSymbols.count, lowThreshold: 10, highThreshold: 30),
-                relatedSymbols: Array(imageLoadSymbols.prefix(8).map(\.name)),
+                confidence: analyzer.confidenceScore(evidenceCount: imageLoadCount, lowThreshold: 3, highThreshold: 20),
                 details: [
-                    .init(key: "Image Load Operations", value: "\(imageLoadSymbols.count)"),
-                    .init(key: "Resize Operations", value: "\(imageResizeSymbols.count)"),
-                    .init(key: "Downsampling Patterns", value: "\(imageDownsampleSymbols.count)")
+                    .init(key: "Image Load Operations", value: "\(imageLoadCount)"),
+                    .init(key: "Resize Operations", value: "\(imageResizeCount)"),
+                    .init(key: "Downsampling Patterns", value: "\(imageDownsampleCount)")
                 ]
             ))
         }
 
         // Check for image caching
-        let imageCacheSymbols = analyzer.findSymbols(matchingAny: [
+        let imageCacheCount = analyzer.countAllEvidence(matchingAny: [
             "NSCache", "URLCache", "imageCache", "SDWebImage",
             "Kingfisher", "Nuke", "AlamofireImage"
         ])
 
-        if imageLoadSymbols.count > 20 && imageCacheSymbols.count == 0 {
+        if imageLoadCount > 5 && imageCacheCount == 0 {
             issues.append(DiagnosticIssue(
                 title: "No Image Caching Detected",
-                description: "Found extensive image loading (\(imageLoadSymbols.count) patterns) but no apparent image caching mechanism. Repeatedly loading and decoding the same images wastes CPU and memory.",
+                description: "Found extensive image loading (\(imageLoadCount) patterns) but no apparent image caching mechanism. Repeatedly loading and decoding the same images wastes CPU and memory.",
                 severity: .info,
                 instrument: .allocations,
                 category: "Image Loading",
                 recommendation: "Implement an image cache using `NSCache` or a third-party library (SDWebImage, Kingfisher, Nuke). NSCache automatically evicts items under memory pressure.",
                 impact: "Without caching, images are decoded from disk or network on every display, causing allocation spikes and CPU overhead.",
-                confidence: 0.5,
-                relatedSymbols: Array(imageLoadSymbols.prefix(5).map(\.name))
+                confidence: 0.5
             ))
         }
 
@@ -160,36 +159,35 @@ final class AllocationsAnalyzer {
     private func analyzeDataBuffers() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        let dataCreationSymbols = analyzer.findSymbols(matchingAny: [
-            "Data(contentsOf", "NSData", "dataWithContentsOfFile",
-            "dataWithContentsOfURL", "Data(count:", "Data(capacity:"
+        let dataCreationCount = analyzer.countAllEvidence(matchingAny: [
+            "NSData", "dataWithContentsOfFile",
+            "dataWithContentsOfURL"
         ])
 
-        let jsonSymbols = analyzer.findSymbols(matchingAny: [
+        let jsonCount = analyzer.countAllEvidence(matchingAny: [
             "JSONDecoder", "JSONEncoder", "JSONSerialization",
             "jsonObject", "PropertyListSerialization"
         ])
 
-        let networkDataSymbols = analyzer.findSymbols(matchingAny: [
+        let networkDataCount = analyzer.countAllEvidence(matchingAny: [
             "URLSession", "dataTask", "downloadTask",
             "Alamofire", "AFNetworking"
         ])
 
-        if dataCreationSymbols.count > 10 {
+        if dataCreationCount > 3 {
             issues.append(DiagnosticIssue(
                 title: "Frequent Data Buffer Creation",
-                description: "Found \(dataCreationSymbols.count) Data/NSData creation patterns. Frequent large data buffer allocations can cause memory pressure.",
-                severity: dataCreationSymbols.count > 25 ? .warning : .info,
+                description: "Found \(dataCreationCount) Data/NSData creation patterns. Frequent large data buffer allocations can cause memory pressure.",
+                severity: dataCreationCount > 10 ? .warning : .info,
                 instrument: .allocations,
                 category: "Data Buffers",
                 recommendation: "For large files, use memory-mapped data (`Data(contentsOf: url, options: .mappedIfSafe)`) instead of loading entirely into memory. Stream large JSON/XML payloads instead of loading the entire response into memory.",
                 impact: "Loading entire files into memory creates allocation spikes proportional to file size. For large files, this can cause memory warnings or app termination.",
                 confidence: 0.6,
-                relatedSymbols: Array(dataCreationSymbols.prefix(5).map(\.name)),
                 details: [
-                    .init(key: "Data Creations", value: "\(dataCreationSymbols.count)"),
-                    .init(key: "JSON Operations", value: "\(jsonSymbols.count)"),
-                    .init(key: "Network Data", value: "\(networkDataSymbols.count)")
+                    .init(key: "Data Creations", value: "\(dataCreationCount)"),
+                    .init(key: "JSON Operations", value: "\(jsonCount)"),
+                    .init(key: "Network Data", value: "\(networkDataCount)")
                 ]
             ))
         }
@@ -212,25 +210,25 @@ final class AllocationsAnalyzer {
             "reduce", "filter", "enumerated"
         ])
 
-        let objcBridging = analyzer.findSymbols(matchingAny: [
+        let objcBridgingCount = analyzer.countAllEvidence(matchingAny: [
             "bridge", "_bridgeToObjectiveC", "NSString", "NSArray", "NSDictionary"
         ])
 
         // If there's significant ObjC bridging but few autorelease pools
-        if objcBridging.count > 20 && autoreleaseSymbols.count < 3 {
+        if objcBridgingCount > 5 && autoreleaseSymbols.count < 3 {
             issues.append(DiagnosticIssue(
                 title: "ObjC Bridging Without Autorelease Pool Management",
-                description: "Found \(objcBridging.count) ObjC bridging operations but only \(autoreleaseSymbols.count) autorelease pool(s). ObjC-bridged objects may accumulate in the default autorelease pool.",
+                description: "Found \(objcBridgingCount) ObjC bridging operations but only \(autoreleaseSymbols.count) autorelease pool(s). ObjC-bridged objects may accumulate in the default autorelease pool.",
                 severity: .info,
                 instrument: .allocations,
                 category: "Autorelease Pools",
                 recommendation: "Wrap loops that perform ObjC bridging in `autoreleasepool { }` blocks. This is especially important for batch processing operations that create many temporary ObjC objects.",
                 impact: "Without explicit autorelease pools, temporary ObjC objects created during bridging accumulate until the end of the run loop iteration, causing temporary memory spikes.",
                 confidence: 0.5,
-                relatedSymbols: Array(autoreleaseSymbols.prefix(3).map(\.name) + objcBridging.prefix(5).map(\.name)),
+                relatedSymbols: Array(autoreleaseSymbols.prefix(3).map(\.name)),
                 details: [
                     .init(key: "Autorelease Pools", value: "\(autoreleaseSymbols.count)"),
-                    .init(key: "ObjC Bridging Ops", value: "\(objcBridging.count)"),
+                    .init(key: "ObjC Bridging Ops", value: "\(objcBridgingCount)"),
                     .init(key: "Loop Patterns", value: "\(loopPatterns.count)")
                 ]
             ))
@@ -290,26 +288,25 @@ final class AllocationsAnalyzer {
     private func analyzeCacheUsage() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        let cacheSymbols = analyzer.findSymbols(matchingAny: [
+        let cacheCount = analyzer.countAllEvidence(matchingAny: [
             "NSCache", "URLCache", "cache", "Cache"
         ])
 
-        let memoryWarningSymbols = analyzer.findSymbols(matchingAny: [
+        let memoryWarningCount = analyzer.countAllEvidence(matchingAny: [
             "didReceiveMemoryWarning", "applicationDidReceiveMemoryWarning",
-            "UIApplication.didReceiveMemoryWarningNotification"
+            "didReceiveMemoryWarningNotification"
         ])
 
-        if cacheSymbols.count > 0 && memoryWarningSymbols.count == 0 {
+        if cacheCount > 0 && memoryWarningCount == 0 {
             issues.append(DiagnosticIssue(
                 title: "Cache Usage Without Memory Warning Handling",
-                description: "Found \(cacheSymbols.count) cache usage(s) but no memory warning handler. While NSCache auto-evicts, custom caches need manual cleanup on memory warnings.",
+                description: "Found \(cacheCount) cache usage(s) but no memory warning handler. While NSCache auto-evicts, custom caches need manual cleanup on memory warnings.",
                 severity: .suggestion,
                 instrument: .allocations,
                 category: "Cache Management",
                 recommendation: "If using custom caches (not NSCache), observe `UIApplication.didReceiveMemoryWarningNotification` and clear caches in response. NSCache handles this automatically but custom Dictionary-based caches do not.",
                 impact: "Custom caches that don't respond to memory warnings can cause the app to be terminated by the system when memory is low.",
-                confidence: 0.5,
-                relatedSymbols: Array(cacheSymbols.prefix(5).map(\.name))
+                confidence: 0.5
             ))
         }
 
@@ -362,24 +359,23 @@ final class AllocationsAnalyzer {
             "mmap", "mappedIfSafe", "alwaysMapped", "NSDataReadingMapped"
         ])
 
-        let fileReadSymbols = analyzer.findSymbols(matchingAny: [
-            "contentsOfFile", "contentsOf", "FileHandle", "FileManager",
-            "read(", "readData"
+        let fileReadCount = analyzer.countAllEvidence(matchingAny: [
+            "contentsOfFile", "FileHandle", "FileManager",
+            "readData"
         ])
 
-        if fileReadSymbols.count > 10 && mmapSymbols.count == 0 {
+        if fileReadCount > 3 && mmapSymbols.count == 0 {
             issues.append(DiagnosticIssue(
                 title: "File Reading Without Memory Mapping",
-                description: "Found \(fileReadSymbols.count) file reading operations but no memory-mapped file access. Memory mapping allows the OS to page data in/out as needed.",
+                description: "Found \(fileReadCount) file reading operations but no memory-mapped file access. Memory mapping allows the OS to page data in/out as needed.",
                 severity: .suggestion,
                 instrument: .allocations,
                 category: "Memory-Mapped Files",
                 recommendation: "Use `Data(contentsOf: url, options: .mappedIfSafe)` for large read-only files. Memory-mapped files let the OS manage which portions are in physical memory, reducing your app's memory footprint.",
                 impact: "Loading entire files into memory creates proportional allocation spikes. Memory mapping defers loading to the OS virtual memory system, which can page data in and out as needed.",
                 confidence: 0.45,
-                relatedSymbols: Array(fileReadSymbols.prefix(5).map(\.name)),
                 details: [
-                    .init(key: "File Read Operations", value: "\(fileReadSymbols.count)"),
+                    .init(key: "File Read Operations", value: "\(fileReadCount)"),
                     .init(key: "Memory Map Usage", value: "\(mmapSymbols.count)")
                 ]
             ))

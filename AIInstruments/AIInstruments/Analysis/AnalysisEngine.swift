@@ -57,9 +57,21 @@ final class AnalysisEngine: ObservableObject {
             // Step 2: Parse the Mach-O binary
             state = .parsing
             progress = 0.20
-            progressMessage = "Parsing Mach-O binary (\(formatBytes(appBundle.executableData.count)))..."
 
-            let parsedInfo = await parseMachO(data: appBundle.executableData)
+            let totalBinarySize = appBundle.executableData.count + appBundle.additionalBinaryData.reduce(0, { $0 + $1.count })
+            progressMessage = "Parsing Mach-O binary (\(formatBytes(totalBinarySize)))..."
+
+            var parsedInfo = await parseMachO(data: appBundle.executableData)
+
+            // Parse additional binaries (debug dylibs) and merge their data.
+            // Xcode debug builds put actual code in a .debug.dylib alongside a thin stub executable.
+            for additionalData in appBundle.additionalBinaryData {
+                let additionalInfo = await parseMachO(data: additionalData)
+                if additionalInfo.isValid {
+                    parsedInfo = parsedInfo.merging(with: additionalInfo)
+                }
+            }
+
             machOInfo = parsedInfo
 
             guard parsedInfo.isValid else {
@@ -101,7 +113,7 @@ final class AnalysisEngine: ObservableObject {
 
             let allocationsResult = await runAllocationsAnalysis(
                 binaryAnalyzer: binaryAnalyzer,
-                binarySize: appBundle.executableData.count
+                binarySize: totalBinarySize
             )
             results.append(allocationsResult)
             progress = 0.90

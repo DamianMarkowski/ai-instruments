@@ -78,14 +78,19 @@ final class ConcurrencyAnalyzer {
             "Sendable", "sendable", "UnsafeSendable", "@Sendable"
         ])
 
+        // Search symbols for async patterns.
+        // "Task" is mangled as "ScT" in Swift symbols, and "swift_task" is the runtime prefix.
+        // Also search ObjC selectors since many async APIs use ObjC bridging.
         let asyncSymbols = analyzer.findSymbols(matchingAny: [
-            "async", "Task", "TaskGroup", "withCheckedContinuation",
-            "withUnsafeContinuation", "AsyncSequence", "AsyncStream"
+            "async", "TaskGroup", "withCheckedContinuation",
+            "withUnsafeContinuation", "AsyncSequence", "AsyncStream",
+            "withTaskGroup", "withThrowingTaskGroup",
+            "swift_task", "ScT"
         ])
 
         let totalTypes = analyzer.swiftTypeCount + analyzer.objcClassCount
 
-        if asyncSymbols.count > 5 && sendableSymbols.count < asyncSymbols.count / 3 {
+        if asyncSymbols.count > 2 && sendableSymbols.count < asyncSymbols.count / 2 {
             issues.append(DiagnosticIssue(
                 title: "Low Sendable Adoption with High Async Usage",
                 description: "Found \(asyncSymbols.count) async/concurrency patterns but only \(sendableSymbols.count) Sendable conformance(s). Types passed across concurrency boundaries should conform to Sendable.",
@@ -172,54 +177,56 @@ final class ConcurrencyAnalyzer {
             "MainActor", "mainActor", "@MainActor"
         ])
 
-        let uiSymbols = analyzer.findSymbols(matchingAny: [
+        // Search both symbols and selectors for UI patterns
+        let uiSymbolCount = analyzer.countAllEvidence(matchingAny: [
             "UIView", "UILabel", "UIButton", "UITableView", "UICollectionView",
             "UITextField", "UITextView", "UIImageView", "UIStackView",
-            "SwiftUI", "View.body", "some View"
+            "SwiftUI"
         ])
 
-        let viewControllers = analyzer.findViewControllerClasses()
+        let viewControllers = analyzer.findAllViewControllerClasses()
 
-        let asyncSymbols = analyzer.findSymbols(matchingAny: [
-            "async", "Task {", "Task.init", "withCheckedContinuation"
+        // Use broader async patterns (mangled names + selectors)
+        let asyncSymbolCount = analyzer.countAllEvidence(matchingAny: [
+            "async", "withCheckedContinuation", "swift_task",
+            "ScT", "withTaskGroup"
         ])
 
-        if uiSymbols.count > 10 && mainActorSymbols.count < 3 && asyncSymbols.count > 5 {
+        if uiSymbolCount > 3 && mainActorSymbols.count < 3 && asyncSymbolCount > 2 {
             issues.append(DiagnosticIssue(
                 title: "UI Code with Limited @MainActor Annotation",
-                description: "Found \(uiSymbols.count) UI-related symbols and \(asyncSymbols.count) async patterns, but only \(mainActorSymbols.count) @MainActor annotations. UI updates from async contexts require MainActor isolation.",
+                description: "Found \(uiSymbolCount) UI-related symbols and \(asyncSymbolCount) async patterns, but only \(mainActorSymbols.count) @MainActor annotations. UI updates from async contexts require MainActor isolation.",
                 severity: .warning,
                 instrument: .concurrency,
                 category: "MainActor Isolation",
                 recommendation: "Annotate view controllers and UI-updating classes with `@MainActor`. Use `@MainActor` on methods that update the UI. When calling UI code from async contexts, use `await MainActor.run { }` or `@MainActor` closures.",
                 impact: "UI updates performed off the main thread cause undefined behavior, visual glitches, and crashes. @MainActor provides compile-time enforcement of main thread access.",
-                confidence: analyzer.confidenceScore(evidenceCount: asyncSymbols.count, lowThreshold: 3, highThreshold: 15),
+                confidence: analyzer.confidenceScore(evidenceCount: asyncSymbolCount, lowThreshold: 3, highThreshold: 15),
                 relatedSymbols: Array(mainActorSymbols.prefix(3).map(\.name) + viewControllers.prefix(5)),
                 details: [
-                    .init(key: "UI Symbols", value: "\(uiSymbols.count)"),
+                    .init(key: "UI Symbols", value: "\(uiSymbolCount)"),
                     .init(key: "@MainActor Uses", value: "\(mainActorSymbols.count)"),
-                    .init(key: "Async Patterns", value: "\(asyncSymbols.count)"),
+                    .init(key: "Async Patterns", value: "\(asyncSymbolCount)"),
                     .init(key: "View Controllers", value: "\(viewControllers.count)")
                 ]
             ))
         }
 
-        // Check for DispatchQueue.main.async (legacy pattern)
-        let mainQueueDispatches = analyzer.findSymbols(matchingAny: [
+        // Check for DispatchQueue.main.async (legacy pattern) - search symbols + selectors
+        let mainQueueDispatchCount = analyzer.countAllEvidence(matchingAny: [
             "DispatchQueue.main", "dispatch_get_main_queue"
         ])
 
-        if mainQueueDispatches.count > 5 && analyzer.usesSwiftConcurrency {
+        if mainQueueDispatchCount > 2 && analyzer.usesSwiftConcurrency {
             issues.append(DiagnosticIssue(
                 title: "Legacy Main Queue Dispatching with Swift Concurrency",
-                description: "Found \(mainQueueDispatches.count) DispatchQueue.main usage(s) alongside Swift Concurrency. Mixing legacy and modern concurrency patterns can lead to subtle issues.",
+                description: "Found \(mainQueueDispatchCount) DispatchQueue.main usage(s) alongside Swift Concurrency. Mixing legacy and modern concurrency patterns can lead to subtle issues.",
                 severity: .info,
                 instrument: .concurrency,
                 category: "MainActor Isolation",
                 recommendation: "Migrate from `DispatchQueue.main.async { }` to `@MainActor` annotations or `MainActor.run { }`. This provides better integration with Swift's structured concurrency model.",
                 impact: "Mixing GCD and Swift Concurrency can cause unexpected ordering issues and makes the concurrency model harder to reason about.",
-                confidence: 0.6,
-                relatedSymbols: Array(mainQueueDispatches.prefix(5).map(\.name))
+                confidence: 0.6
             ))
         }
 
@@ -231,14 +238,20 @@ final class ConcurrencyAnalyzer {
     private func analyzeDataRacePotential() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        // Look for global/static mutable state
+        // Look for global/static mutable state - search symbols and class/type names
         let globalVars = analyzer.findSymbols(matchingAny: [
             "global_var", "static_var", "shared", "singleton", "instance"
         ])
 
+        // Also look for shared/singleton patterns in Swift type descriptors and class names
+        let sharedTypes = analyzer.allClassNames.filter {
+            $0.contains("Shared") || $0.contains("Singleton") || $0.contains("Global")
+        }
+
         let staticMembers = analyzer.machOInfo.symbols.filter {
-            ($0.name.contains("static") || $0.name.contains("Static")) &&
-            ($0.name.contains("var") || $0.name.contains("modify") || $0.name.contains("setter"))
+            ($0.name.contains("static") || $0.name.contains("Static") || $0.name.contains("Wvau")) &&
+            ($0.name.contains("var") || $0.name.contains("modify") || $0.name.contains("setter") ||
+             $0.name.hasSuffix("vs") || $0.name.hasSuffix("vM"))
         }
 
         let lockSymbols = analyzer.findSymbols(matchingAny: [
@@ -246,9 +259,9 @@ final class ConcurrencyAnalyzer {
             "DispatchSemaphore", "OSAllocatedUnfairLock"
         ])
 
-        let totalMutableGlobals = globalVars.count + staticMembers.count
+        let totalMutableGlobals = globalVars.count + staticMembers.count + sharedTypes.count
 
-        if totalMutableGlobals > 5 && lockSymbols.count < totalMutableGlobals / 3 {
+        if totalMutableGlobals > 2 && lockSymbols.count < totalMutableGlobals / 2 {
             issues.append(DiagnosticIssue(
                 title: "Potentially Unprotected Shared Mutable State",
                 description: "Found \(totalMutableGlobals) global/static mutable state pattern(s) but only \(lockSymbols.count) synchronization primitive(s). Shared mutable state without synchronization causes data races.",
@@ -324,17 +337,22 @@ final class ConcurrencyAnalyzer {
     private func analyzeTaskManagement() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
+        // Task is mangled as "ScT" in Swift symbols. "swift_task" is the runtime prefix.
+        // Also search for readable component names that appear in mangled forms.
         let taskCreations = analyzer.findSymbols(matchingAny: [
-            "Task.init", "Task {", "Task.detached", "TaskGroup",
+            "ScT",           // Swift mangled Task type
+            "swift_task",    // Swift runtime task functions
+            "detached",      // Task.detached (component name appears in mangled form)
+            "TaskGroup",     // appears in mangled names
             "withTaskGroup", "withThrowingTaskGroup"
         ])
 
         let taskCancellations = analyzer.findSymbols(matchingAny: [
-            "cancel()", "Task.cancel", "isCancelled", "checkCancellation",
-            "withTaskCancellationHandler"
+            "isCancelled", "checkCancellation",
+            "withTaskCancellationHandler", "swift_task_cancel"
         ])
 
-        if taskCreations.count > 5 && taskCancellations.count == 0 {
+        if taskCreations.count > 2 && taskCancellations.count == 0 {
             issues.append(DiagnosticIssue(
                 title: "Tasks Without Cancellation Support",
                 description: "Found \(taskCreations.count) task creation(s) but no cancellation handling. Long-running tasks should support cooperative cancellation.",
@@ -355,7 +373,7 @@ final class ConcurrencyAnalyzer {
         // Check for Task.detached (often misused)
         let detachedTasks = analyzer.findSymbols(matching: "detached")
 
-        if detachedTasks.count > 3 {
+        if detachedTasks.count > 1 {
             issues.append(DiagnosticIssue(
                 title: "Frequent Use of Detached Tasks",
                 description: "Found \(detachedTasks.count) detached task pattern(s). Detached tasks don't inherit the parent task's priority, local values, or actor context.",
@@ -377,49 +395,48 @@ final class ConcurrencyAnalyzer {
     private func analyzeLegacyConcurrency() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        let gcdSymbols = analyzer.findSymbols(matchingAny: [
+        // Search both symbols and ObjC selectors for GCD patterns
+        let gcdCount = analyzer.countAllEvidence(matchingAny: [
             "dispatch_async", "dispatch_sync", "dispatch_barrier",
             "dispatch_group", "dispatch_semaphore",
-            "DispatchQueue.global", "DispatchQueue.async", "DispatchGroup"
+            "DispatchQueue", "DispatchGroup"
         ])
 
-        let threadSymbols = analyzer.findSymbols(matchingAny: [
-            "NSThread", "Thread.init", "pthread_create", "detachNewThread"
+        let threadCount = analyzer.countAllEvidence(matchingAny: [
+            "NSThread", "pthread_create", "detachNewThread"
         ])
 
-        if (gcdSymbols.count > 10 || threadSymbols.count > 2) && analyzer.usesSwiftConcurrency {
+        if (gcdCount > 3 || threadCount > 1) && analyzer.usesSwiftConcurrency {
             issues.append(DiagnosticIssue(
                 title: "Mixed Concurrency Models",
-                description: "Found \(gcdSymbols.count) GCD patterns and \(threadSymbols.count) thread patterns alongside Swift Concurrency. Mixing concurrency models increases complexity and bug risk.",
+                description: "Found \(gcdCount) GCD patterns and \(threadCount) thread patterns alongside Swift Concurrency. Mixing concurrency models increases complexity and bug risk.",
                 severity: .warning,
                 instrument: .concurrency,
                 category: "Legacy Patterns",
                 recommendation: "Gradually migrate from GCD and raw threads to Swift Concurrency (async/await, actors, task groups). Use `withCheckedContinuation` to bridge legacy async APIs to async/await.",
                 impact: "Mixed concurrency models make it harder to reason about thread safety, increase the risk of priority inversions, and prevent the runtime from optimizing task scheduling.",
                 confidence: 0.65,
-                relatedSymbols: Array((gcdSymbols + threadSymbols).prefix(8).map(\.name)),
                 details: [
-                    .init(key: "GCD Patterns", value: "\(gcdSymbols.count)"),
-                    .init(key: "Thread Patterns", value: "\(threadSymbols.count)"),
+                    .init(key: "GCD Patterns", value: "\(gcdCount)"),
+                    .init(key: "Thread Patterns", value: "\(threadCount)"),
                     .init(key: "Uses Swift Concurrency", value: "\(analyzer.usesSwiftConcurrency)")
                 ]
             ))
         }
 
-        // Check for dispatch_sync (deadlock risk)
-        let syncDispatches = analyzer.findSymbols(matchingAny: ["dispatch_sync", "DispatchQueue.sync"])
+        // Check for dispatch_sync (deadlock risk) - search symbols + selectors
+        let syncDispatchCount = analyzer.countAllEvidence(matchingAny: ["dispatch_sync"])
 
-        if syncDispatches.count > 3 {
+        if syncDispatchCount > 1 {
             issues.append(DiagnosticIssue(
                 title: "Synchronous Dispatch Usage (Deadlock Risk)",
-                description: "Found \(syncDispatches.count) synchronous dispatch call(s). sync dispatch to the current queue causes deadlocks.",
+                description: "Found \(syncDispatchCount) synchronous dispatch call(s). sync dispatch to the current queue causes deadlocks.",
                 severity: .warning,
                 instrument: .concurrency,
                 category: "Legacy Patterns",
                 recommendation: "Replace `DispatchQueue.sync` with `async` where possible. If synchronous access is needed, use actors or locks instead. Never call `sync` on the current queue.",
                 impact: "Synchronous dispatches can cause deadlocks when dispatching to the current queue, and can cause priority inversions when dispatching to lower-priority queues.",
-                confidence: 0.7,
-                relatedSymbols: Array(syncDispatches.prefix(5).map(\.name))
+                confidence: 0.7
             ))
         }
 
@@ -431,16 +448,19 @@ final class ConcurrencyAnalyzer {
     private func analyzeAsyncAwaitPatterns() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
+        // Continuation function names appear in mangled symbols as readable substrings
         let continuationSymbols = analyzer.findSymbols(matchingAny: [
             "withCheckedContinuation", "withCheckedThrowingContinuation",
-            "withUnsafeContinuation", "withUnsafeThrowingContinuation"
+            "withUnsafeContinuation", "withUnsafeThrowingContinuation",
+            "CheckedContinuation", "UnsafeContinuation"
         ])
 
         let unsafeContinuations = analyzer.findSymbols(matchingAny: [
-            "withUnsafeContinuation", "withUnsafeThrowingContinuation"
+            "withUnsafeContinuation", "withUnsafeThrowingContinuation",
+            "UnsafeContinuation"
         ])
 
-        if unsafeContinuations.count > 3 {
+        if unsafeContinuations.count > 1 {
             issues.append(DiagnosticIssue(
                 title: "Unsafe Continuations Usage",
                 description: "Found \(unsafeContinuations.count) unsafe continuation(s). Unlike checked continuations, unsafe continuations don't detect misuse at runtime.",
@@ -466,29 +486,37 @@ final class ConcurrencyAnalyzer {
     private func analyzeGlobalState() -> [DiagnosticIssue] {
         var issues: [DiagnosticIssue] = []
 
-        // Check for singleton patterns
+        // Check for singleton patterns in symbols and class/type names
         let singletonPatterns = analyzer.findSymbols(matchingAny: [
-            ".shared", "sharedInstance", "default", "singleton"
+            ".shared", "sharedInstance", "singleton", "Shared"
         ])
+
+        // Also check Swift type descriptors and ObjC classes for singleton-like types
+        let singletonTypes = analyzer.allClassNames.filter {
+            $0.contains("Shared") || $0.contains("Singleton") || $0.contains("Manager") ||
+            $0.contains("Store") || $0.contains("Cache")
+        }
 
         let singletonClasses = Set(singletonPatterns.compactMap { symbol -> String? in
             let components = symbol.name.split(separator: ".")
             return components.count >= 2 ? String(components[0]) : nil
         })
 
-        if singletonClasses.count > 5 {
+        let totalSingletons = singletonClasses.count + singletonTypes.count
+
+        if totalSingletons > 3 {
             issues.append(DiagnosticIssue(
                 title: "Extensive Singleton Pattern Usage",
-                description: "Found approximately \(singletonClasses.count) singleton/shared instance patterns. Singletons are global mutable state and require careful thread-safety considerations.",
+                description: "Found approximately \(totalSingletons) singleton/shared instance patterns. Singletons are global mutable state and require careful thread-safety considerations.",
                 severity: .info,
                 instrument: .concurrency,
                 category: "Global State",
                 recommendation: "Consider migrating singletons to actors for thread-safe global state. If singletons must remain classes, ensure all mutable properties are protected with synchronization. Consider using dependency injection to reduce singleton reliance.",
                 impact: "Singletons accessed from multiple threads without synchronization are a primary source of data races. They also make testing and reasoning about code more difficult.",
                 confidence: 0.55,
-                relatedSymbols: Array(singletonClasses.prefix(8)),
+                relatedSymbols: Array(singletonClasses.prefix(4)) + Array(singletonTypes.prefix(4)),
                 details: [
-                    .init(key: "Singleton Patterns", value: "\(singletonClasses.count)")
+                    .init(key: "Singleton Patterns", value: "\(totalSingletons)")
                 ]
             ))
         }

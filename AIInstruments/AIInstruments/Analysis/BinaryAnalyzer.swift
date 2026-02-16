@@ -136,9 +136,42 @@ final class BinaryAnalyzer {
         return machOInfo.objcSelectors.filter { $0.lowercased().contains(lowered) }
     }
 
+    /// Find selectors matching any of the given patterns (case-insensitive).
+    func findSelectors(matchingAny patterns: [String]) -> [String] {
+        let lowered = patterns.map { $0.lowercased() }
+        return machOInfo.objcSelectors.filter { sel in
+            let s = sel.lowercased()
+            return lowered.contains { s.contains($0) }
+        }
+    }
+
     /// Check if a selector exists.
     func hasSelector(_ selector: String) -> Bool {
         machOInfo.objcSelectors.contains(selector)
+    }
+
+    // MARK: - Broad Evidence Search
+
+    /// Count matches across symbols, ObjC selectors, and extracted strings.
+    func countAllEvidence(matchingAny patterns: [String]) -> Int {
+        findSymbols(matchingAny: patterns).count
+            + findSelectors(matchingAny: patterns).count
+    }
+
+    // MARK: - Combined Class / Type Analysis
+
+    /// All known class and type names from both ObjC metadata and Swift type descriptors.
+    var allClassNames: [String] {
+        machOInfo.objcClasses + machOInfo.swiftTypeDescriptors
+    }
+
+    /// Find view controller classes from both ObjC classes and Swift type descriptors.
+    func findAllViewControllerClasses() -> [String] {
+        allClassNames.filter { className in
+            className.hasSuffix("ViewController") ||
+            className.hasSuffix("Controller") ||
+            className.hasSuffix("VC")
+        }
     }
 
     // MARK: - Statistical Helpers

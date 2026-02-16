@@ -9,6 +9,8 @@ struct AppBundle {
     let buildNumber: String
     let executableName: String
     let executableData: Data
+    /// Additional binary data from debug dylibs that contain the actual code in debug builds.
+    let additionalBinaryData: [Data]
     let minimumOSVersion: String
     let linkedFrameworks: [String]
     let infoPlist: [String: Any]
@@ -52,6 +54,15 @@ struct AppBundle {
 
         let executableData = try Data(contentsOf: executableURL)
 
+        // Check for debug dylib (Xcode debug builds put actual code here)
+        var additionalBinaries: [Data] = []
+        let debugDylibURL = url.appendingPathComponent("\(executableName).debug.dylib")
+        if FileManager.default.fileExists(atPath: debugDylibURL.path) {
+            if let debugData = try? Data(contentsOf: debugDylibURL) {
+                additionalBinaries.append(debugData)
+            }
+        }
+
         // Extract linked frameworks from Frameworks directory
         var frameworks: [String] = []
         let frameworksDir = url.appendingPathComponent("Frameworks")
@@ -77,6 +88,7 @@ struct AppBundle {
             buildNumber: plist["CFBundleVersion"] as? String ?? "Unknown",
             executableName: executableName,
             executableData: executableData,
+            additionalBinaryData: additionalBinaries,
             minimumOSVersion: plist["MinimumOSVersion"] as? String ?? "Unknown",
             linkedFrameworks: frameworks,
             infoPlist: plist,

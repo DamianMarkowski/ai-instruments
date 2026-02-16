@@ -59,6 +59,29 @@ struct MachOInfo {
         swiftProtocolConformances: [], sections: [],
         totalTextSize: 0, totalDataSize: 0
     )
+
+    /// Merge another MachOInfo into this one (e.g. debug dylib data into main binary data).
+    func merging(with other: MachOInfo) -> MachOInfo {
+        MachOInfo(
+            isValid: self.isValid || other.isValid,
+            isFatBinary: self.isFatBinary,
+            isEncrypted: self.isEncrypted,
+            architecture: self.architecture,
+            fileType: self.fileType,
+            segments: self.segments + other.segments,
+            symbols: self.symbols + other.symbols,
+            linkedLibraries: Array(Set(self.linkedLibraries + other.linkedLibraries)),
+            extractedStrings: self.extractedStrings + other.extractedStrings,
+            objcClasses: Array(Set(self.objcClasses + other.objcClasses)),
+            objcSelectors: Array(Set(self.objcSelectors + other.objcSelectors)),
+            objcProtocols: Array(Set(self.objcProtocols + other.objcProtocols)),
+            swiftTypeDescriptors: Array(Set(self.swiftTypeDescriptors + other.swiftTypeDescriptors)),
+            swiftProtocolConformances: self.swiftProtocolConformances + other.swiftProtocolConformances,
+            sections: self.sections + other.sections,
+            totalTextSize: self.totalTextSize + other.totalTextSize,
+            totalDataSize: self.totalDataSize + other.totalDataSize
+        )
+    }
 }
 
 struct SegmentInfo {
@@ -504,28 +527,33 @@ final class MachOParser {
     }
 
     private func extractObjCSelectors(from sections: [SectionInfo]) -> [String] {
-        guard let section = sections.first(where: { $0.name == "__objc_methname" || $0.name == "__objc_selrefs" }) else {
-            return []
-        }
+        // Read ALL __objc_methname sections (there can be multiple in a fat binary)
+        let selectorSections = sections.filter { $0.name == "__objc_methname" }
+        guard !selectorSections.isEmpty else { return [] }
 
         var selectors: [String] = []
-        let start = Int(section.offset)
-        let size = Int(section.size)
-        guard start + size <= data.count else { return [] }
+        for section in selectorSections {
+            let start = Int(section.offset)
+            let size = Int(section.size)
+            guard start + size <= data.count, size > 0 else { continue }
 
-        let sectionData = data[start..<(start + size)]
-        var current = ""
-        for byte in sectionData {
-            if byte == 0 {
-                if !current.isEmpty {
-                    selectors.append(current)
-                    current = ""
+            let sectionData = data[start..<(start + size)]
+            var current = ""
+            for byte in sectionData {
+                if byte == 0 {
+                    if !current.isEmpty {
+                        selectors.append(current)
+                        current = ""
+                    }
+                } else {
+                    let scalar = Unicode.Scalar(byte)
+                    if scalar.isASCII {
+                        current.append(Character(scalar))
+                    }
                 }
-            } else {
-                let scalar = Unicode.Scalar(byte)
-                if scalar.isASCII {
-                    current.append(Character(scalar))
-                }
+            }
+            if !current.isEmpty {
+                selectors.append(current)
             }
         }
 
@@ -615,10 +643,12 @@ final class MachOParser {
                 let component = String(remaining[idx..<endIdx])
                 components.append(component)
                 idx = endIdx
-            } else {
-                // Skip non-numeric, non-alpha characters
+            } else if numStr.isEmpty, idx < remaining.endIndex {
+                // No digits found at this position; skip the current character
                 idx = remaining.index(after: idx)
             }
+            // If numStr was non-empty but len was 0 (e.g. "0"), idx already
+            // advanced past those digits in the inner loop — nothing more to do.
         }
 
         if components.count >= 2 {
