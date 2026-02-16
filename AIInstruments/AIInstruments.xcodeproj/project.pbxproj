@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7AFB22832F3E45110036CD93 /* Nimble in Frameworks */ = {isa = PBXBuildFile; productRef = 7AFB22822F3E45110036CD93 /* Nimble */; };
+		7AFB22852F3E45110036CD93 /* FactoryKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7AFB22862F3E45110036CD93 /* FactoryKit */; };
+		7AFB22892F3E45110036CD93 /* FactoryTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 7AFB228A2F3E45110036CD93 /* FactoryTesting */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		7AFB22652F3E45110036CD93 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7AFB22852F3E45110036CD93 /* FactoryKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,6 +66,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7AFB22832F3E45110036CD93 /* Nimble in Frameworks */,
+				7AFB22892F3E45110036CD93 /* FactoryTesting in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +121,7 @@
 			);
 			name = AIInstruments;
 			packageProductDependencies = (
+				7AFB22862F3E45110036CD93 /* FactoryKit */,
 			);
 			productName = AIInstruments;
 			productReference = 7AFB22572F3E450F0036CD93 /* AIInstruments.app */;
@@ -135,6 +145,8 @@
 			);
 			name = AIInstrumentsTests;
 			packageProductDependencies = (
+				7AFB22822F3E45110036CD93 /* Nimble */,
+				7AFB228A2F3E45110036CD93 /* FactoryTesting */,
 			);
 			productName = AIInstrumentsTests;
 			productReference = 7AFB22642F3E45110036CD93 /* AIInstrumentsTests.xctest */;
@@ -195,6 +207,10 @@
 			);
 			mainGroup = 7AFB224E2F3E450F0036CD93;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7AFB22812F3E45110036CD93 /* XCRemoteSwiftPackageReference "Nimble" */,
+				7AFB22842F3E45110036CD93 /* XCRemoteSwiftPackageReference "Factory" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7AFB22582F3E450F0036CD93 /* Products */;
 			projectDirPath = "";
@@ -581,6 +597,43 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7AFB22812F3E45110036CD93 /* XCRemoteSwiftPackageReference "Nimble" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Quick/Nimble.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.0.0;
+			};
+		};
+		7AFB22842F3E45110036CD93 /* XCRemoteSwiftPackageReference "Factory" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hmlongco/Factory.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7AFB22822F3E45110036CD93 /* Nimble */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7AFB22812F3E45110036CD93 /* XCRemoteSwiftPackageReference "Nimble" */;
+			productName = Nimble;
+		};
+		7AFB22862F3E45110036CD93 /* FactoryKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7AFB22842F3E45110036CD93 /* XCRemoteSwiftPackageReference "Factory" */;
+			productName = FactoryKit;
+		};
+		7AFB228A2F3E45110036CD93 /* FactoryTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7AFB22842F3E45110036CD93 /* XCRemoteSwiftPackageReference "Factory" */;
+			productName = FactoryTesting;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7AFB224F2F3E450F0036CD93 /* Project object */;
 }

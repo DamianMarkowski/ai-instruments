@@ -1,17 +1,8 @@
-//
-//  AIInstrumentsTests.swift
-//  AIInstrumentsTests
-//
-//  Created by Damian Markowski on 12/02/2026.
-//
-
-import Testing
-@testable import AIInstruments
-
-struct AIInstrumentsTests {
-
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    }
-
-}
+// Test files are organized by module:
+// - ModelTests.swift: Severity, InstrumentType, DiagnosticIssue, AnalysisResult, AnalysisReport, MachOInfo
+// - MachOParserTests.swift: Mach-O binary parsing
+// - BinaryAnalyzerTests.swift: Binary analysis utilities
+// - LeaksAnalyzerTests.swift: Memory leak pattern detection
+// - ConcurrencyAnalyzerTests.swift: Swift concurrency safety analysis
+// - AllocationsAnalyzerTests.swift: Memory allocation pattern detection
+// - AnalysisEngineTests.swift: Analysis orchestration with DI

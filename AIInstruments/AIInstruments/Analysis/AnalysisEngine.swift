@@ -1,10 +1,14 @@
 import Foundation
 import Combine
+import FactoryKit
 
 /// Orchestrates all diagnostic analyses on an iOS app bundle.
 /// Parses the Mach-O binary, runs each instrument analyzer, and produces an aggregated report.
 @MainActor
 final class AnalysisEngine: ObservableObject {
+
+    @Injected(\.appBundleLoader) private var appBundleLoader
+    @Injected(\.machOParser) private var machOParserService
 
     enum State: Equatable {
         case idle
@@ -49,7 +53,7 @@ final class AnalysisEngine: ObservableObject {
 
         do {
             // Step 1: Load the app bundle
-            let appBundle = try await AppBundle.load(from: url)
+            let appBundle = try await appBundleLoader.load(from: url)
             loadedApp = appBundle
             progress = 0.15
             progressMessage = "App bundle loaded: \(appBundle.name)"
@@ -150,8 +154,9 @@ final class AnalysisEngine: ObservableObject {
     // MARK: - Analysis Runners
 
     private func parseMachO(data: Data) async -> MachOInfo {
-        await Task.detached(priority: .userInitiated) {
-            MachOParser(data: data).parse()
+        let parser = self.machOParserService
+        return await Task.detached(priority: .userInitiated) {
+            parser.parse(data: data)
         }.value
     }
 
