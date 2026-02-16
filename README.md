@@ -113,4 +113,4 @@ xcodebuild test -project "AIInstruments.xcodeproj" -scheme "AIInstruments" -dest
 
 ## Feedback and contribution
 
-I'm always open to receiving feedback and contribution to my project so please feel free to open Pull Requests, raise Issues or reach out to me on X https://x.com/damianmarkowski. Thanks!
+I'm always open to receiving feedback and contribution to my project so please feel free to open Pull Requests, raise Issues or reach out to me on X https://x.com/dammarkowski. Thanks!
