@@ -4,6 +4,7 @@ import SwiftUI
 struct SidebarView: View {
     @ObservedObject var engine: AnalysisEngine
     @Binding var selectedItem: ContentView.NavigationItem?
+    var onNewAnalysis: () -> Void
 
     var body: some View {
         List(selection: $selectedItem) {
@@ -50,6 +51,20 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .navigationTitle("Diagnostics")
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                onNewAnalysis()
+            } label: {
+                Label("New Analysis", systemImage: "plus.circle.fill")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .font(Theme.Typography.headline)
+            .foregroundStyle(.blue)
+            .padding(.horizontal, Theme.Spacing.medium)
+            .padding(.vertical, Theme.Spacing.small)
+            .background(.bar)
+        }
     }
 
     // MARK: - App Info Row

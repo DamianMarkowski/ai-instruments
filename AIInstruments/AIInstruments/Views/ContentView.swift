@@ -23,6 +23,14 @@ struct ContentView: View {
             }
         }
         .frame(minWidth: 1000, minHeight: 650)
+        .onReceive(NotificationCenter.default.publisher(for: .newAnalysisRequested)) { _ in
+            startNewAnalysis()
+        }
+    }
+
+    private func startNewAnalysis() {
+        selectedItem = .dashboard
+        engine.reset()
     }
 
     // MARK: - Welcome / Progress View
@@ -53,7 +61,8 @@ struct ContentView: View {
         NavigationSplitView {
             SidebarView(
                 engine: engine,
-                selectedItem: $selectedItem
+                selectedItem: $selectedItem,
+                onNewAnalysis: startNewAnalysis
             )
             .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 300)
         } detail: {
@@ -63,7 +72,7 @@ struct ContentView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
-                    engine.reset()
+                    startNewAnalysis()
                 } label: {
                     Label("New Analysis", systemImage: "arrow.counterclockwise")
                 }
