@@ -31,8 +31,7 @@ struct WelcomeView: View {
         .fileImporter(
             isPresented: $showFileImporter,
             allowedContentTypes: [
-                UTType(filenameExtension: "ipa") ?? .data,
-                UTType(filenameExtension: "app") ?? .folder
+                .applicationBundle
             ],
             allowsMultipleSelection: false
         ) { result in
@@ -88,7 +87,7 @@ struct WelcomeView: View {
                 Text("Drop your iOS app here")
                     .font(Theme.Typography.title3)
 
-                Text("Supports .ipa files and .app bundles")
+                Text("Supports .app bundles")
                     .font(Theme.Typography.caption)
                     .foregroundStyle(Theme.Colors.tertiaryText)
             }

@@ -14,81 +14,16 @@ struct AppBundle {
     let infoPlist: [String: Any]
     let isEncrypted: Bool
 
-    /// Loads an app bundle from a .app directory or .ipa file.
+    /// Loads an app bundle from a .app directory.
     static func load(from url: URL) async throws -> AppBundle {
         let ext = url.pathExtension.lowercased()
 
         switch ext {
-        case "ipa":
-            return try await loadFromIPA(url: url)
         case "app":
             return try await loadFromAppBundle(url: url)
         default:
             throw AppBundleError.unsupportedFormat(ext)
         }
-    }
-
-    // MARK: - IPA Loading
-
-    private static func loadFromIPA(url: URL) async throws -> AppBundle {
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("APD_\(UUID().uuidString)")
-
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
-
-        // Extract IPA (which is a ZIP file)
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        process.arguments = ["-xk", url.path, tempDir.path]
-
-        let pipe = Pipe()
-        process.standardError = pipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            // Fallback to unzip
-            let unzipProcess = Process()
-            unzipProcess.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-            unzipProcess.arguments = ["-o", url.path, "-d", tempDir.path]
-            unzipProcess.standardOutput = Pipe()
-            unzipProcess.standardError = Pipe()
-
-            try unzipProcess.run()
-            unzipProcess.waitUntilExit()
-
-            guard unzipProcess.terminationStatus == 0 else {
-                throw AppBundleError.extractionFailed
-            }
-
-            return try await findAndLoadApp(in: tempDir)
-        }
-
-        return try await findAndLoadApp(in: tempDir)
-    }
-
-    private static func findAndLoadApp(in directory: URL) async throws -> AppBundle {
-        let payloadDir = directory.appendingPathComponent("Payload")
-
-        guard FileManager.default.fileExists(atPath: payloadDir.path) else {
-            throw AppBundleError.invalidIPAStructure
-        }
-
-        let contents = try FileManager.default.contentsOfDirectory(
-            at: payloadDir,
-            includingPropertiesForKeys: nil
-        )
-
-        guard let appDir = contents.first(where: { $0.pathExtension == "app" }) else {
-            throw AppBundleError.noAppBundleFound
-        }
-
-        return try await loadFromAppBundle(url: appDir)
     }
 
     // MARK: - .app Bundle Loading
@@ -154,9 +89,6 @@ struct AppBundle {
 
 enum AppBundleError: LocalizedError {
     case unsupportedFormat(String)
-    case extractionFailed
-    case invalidIPAStructure
-    case noAppBundleFound
     case missingInfoPlist
     case invalidInfoPlist
     case missingExecutable(String)
@@ -164,13 +96,7 @@ enum AppBundleError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedFormat(let ext):
-            return "Unsupported file format: .\(ext). Please provide a .ipa or .app bundle."
-        case .extractionFailed:
-            return "Failed to extract the IPA file. The file may be corrupted."
-        case .invalidIPAStructure:
-            return "Invalid IPA structure. No Payload directory found."
-        case .noAppBundleFound:
-            return "No .app bundle found inside the IPA Payload directory."
+            return "Unsupported file format: .\(ext). Please provide an .app bundle."
         case .missingInfoPlist:
             return "The app bundle is missing its Info.plist file."
         case .invalidInfoPlist:

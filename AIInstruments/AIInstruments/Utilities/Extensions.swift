@@ -55,15 +55,11 @@ extension View {
 // MARK: - URL Extensions
 
 extension URL {
-    var isIPAFile: Bool {
-        pathExtension.lowercased() == "ipa"
-    }
-
     var isAppBundle: Bool {
         pathExtension.lowercased() == "app"
     }
 
     var isSupportedForAnalysis: Bool {
-        isIPAFile || isAppBundle
+        isAppBundle
     }
 }
