@@ -67,30 +67,15 @@ struct InstrumentDetailView: View {
 
     private var instrumentHeader: some View {
         HStack(spacing: Theme.Spacing.xLarge) {
-            // Score gauge
+            // Issue count badge
             ZStack {
                 Circle()
                     .stroke(Theme.Colors.separator.opacity(0.3), lineWidth: 6)
                     .frame(width: 80, height: 80)
 
-                Circle()
-                    .trim(from: 0, to: CGFloat(result.score) / 100)
-                    .stroke(
-                        result.instrument.color,
-                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
-                    )
-                    .frame(width: 80, height: 80)
-                    .rotationEffect(.degrees(-90))
-
-                VStack(spacing: 0) {
-                    Text("\(result.score)")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.Colors.scoreColor(for: result.score))
-
-                    Text(result.scoreGrade)
-                        .font(Theme.Typography.caption)
-                        .foregroundStyle(Theme.Colors.secondaryText)
-                }
+                Text("\(result.issues.count)")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(result.instrument.color)
             }
 
             VStack(alignment: .leading, spacing: Theme.Spacing.small) {
@@ -264,4 +249,5 @@ struct InstrumentDetailView: View {
         }
         .cardStyle()
     }
+
 }

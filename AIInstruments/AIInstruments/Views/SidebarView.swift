@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Sidebar navigation showing app info, instruments, and their scores.
+/// Sidebar navigation showing app info and instruments.
 struct SidebarView: View {
     @ObservedObject var engine: AnalysisEngine
     @Binding var selectedItem: ContentView.NavigationItem?
@@ -19,13 +19,7 @@ struct SidebarView: View {
             Section("Overview") {
                 NavigationLink(value: ContentView.NavigationItem.dashboard) {
                     Label {
-                        HStack {
-                            Text("Dashboard")
-                            Spacer()
-                            if let report = engine.report {
-                                scoreTag(report.overallScore)
-                            }
-                        }
+                        Text("Dashboard")
                     } icon: {
                         Image(systemName: "chart.bar.doc.horizontal")
                             .foregroundStyle(.secondary)
@@ -122,10 +116,6 @@ struct SidebarView: View {
                 }
 
                 Spacer()
-
-                if let result = engine.result(for: instrument) {
-                    scoreTag(result.score)
-                }
             }
         } icon: {
             Image(systemName: instrument.icon)
@@ -168,16 +158,4 @@ struct SidebarView: View {
         }
     }
 
-    // MARK: - Score Tag
-
-    private func scoreTag(_ score: Int) -> some View {
-        Text("\(score)")
-            .font(Theme.Typography.caption)
-            .fontWeight(.semibold)
-            .foregroundStyle(Theme.Colors.scoreColor(for: score))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(Theme.Colors.scoreColor(for: score).opacity(0.12))
-            .clipShape(Capsule())
-    }
 }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Dashboard overview showing overall score and per-instrument results.
+/// Dashboard overview showing issue counts and per-instrument results.
 struct DashboardView: View {
     let report: AnalysisReport
     let onSelectInstrument: (InstrumentType) -> Void
@@ -11,8 +11,8 @@ struct DashboardView: View {
                 // Header
                 headerSection
 
-                // Score Cards Grid
-                scoreCardsSection
+                // Instrument Cards Grid
+                instrumentCardsSection
 
                 // Issues Summary
                 issuesSummarySection
@@ -29,8 +29,8 @@ struct DashboardView: View {
 
     private var headerSection: some View {
         HStack(spacing: Theme.Spacing.xxLarge) {
-            // Overall Score Circle
-            overallScoreView
+            // Overall issue count
+            overallIssuesView
 
             // App Summary
             VStack(alignment: .leading, spacing: Theme.Spacing.small) {
@@ -69,27 +69,18 @@ struct DashboardView: View {
         .cardStyle()
     }
 
-    private var overallScoreView: some View {
+    private var overallIssuesView: some View {
         ZStack {
             Circle()
                 .stroke(Theme.Colors.separator.opacity(0.3), lineWidth: 8)
                 .frame(width: 100, height: 100)
 
-            Circle()
-                .trim(from: 0, to: CGFloat(report.overallScore) / 100)
-                .stroke(
-                    Theme.Colors.scoreColor(for: report.overallScore),
-                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                )
-                .frame(width: 100, height: 100)
-                .rotationEffect(.degrees(-90))
-
             VStack(spacing: 0) {
-                Text("\(report.overallScore)")
+                Text("\(report.totalIssues)")
                     .font(Theme.Typography.scoreDisplay)
-                    .foregroundStyle(Theme.Colors.scoreColor(for: report.overallScore))
+                    .foregroundStyle(Theme.Colors.primaryText)
 
-                Text(report.overallGrade)
+                Text("issue\(report.totalIssues == 1 ? "" : "s")")
                     .font(Theme.Typography.scoreGrade)
                     .foregroundStyle(Theme.Colors.secondaryText)
             }
@@ -106,22 +97,22 @@ struct DashboardView: View {
         .foregroundStyle(color)
     }
 
-    // MARK: - Score Cards
+    // MARK: - Instrument Cards
 
-    private var scoreCardsSection: some View {
+    private var instrumentCardsSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
             Text("Instruments")
                 .font(Theme.Typography.title3)
 
             HStack(spacing: Theme.Spacing.medium) {
                 ForEach(report.results, id: \.instrument) { result in
-                    instrumentScoreCard(result)
+                    instrumentIssueCard(result)
                 }
             }
         }
     }
 
-    private func instrumentScoreCard(_ result: AnalysisResult) -> some View {
+    private func instrumentIssueCard(_ result: AnalysisResult) -> some View {
         Button {
             onSelectInstrument(result.instrument)
         } label: {
@@ -135,10 +126,6 @@ struct DashboardView: View {
                         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.small))
 
                     Spacer()
-
-                    Text(result.scoreGrade)
-                        .font(Theme.Typography.scoreGrade)
-                        .foregroundStyle(Theme.Colors.scoreColor(for: result.score))
                 }
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.xxxSmall) {
@@ -149,20 +136,6 @@ struct DashboardView: View {
                         .font(Theme.Typography.caption)
                         .foregroundStyle(Theme.Colors.secondaryText)
                 }
-
-                // Score bar
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Theme.Colors.separator.opacity(0.3))
-                            .frame(height: 6)
-
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Theme.Colors.scoreColor(for: result.score))
-                            .frame(width: geometry.size.width * CGFloat(result.score) / 100, height: 6)
-                    }
-                }
-                .frame(height: 6)
 
                 // Severity breakdown
                 HStack(spacing: Theme.Spacing.small) {
@@ -319,6 +292,7 @@ struct DashboardView: View {
             }
         }
     }
+
 }
 
 // MARK: - Issue Row View (reusable)
