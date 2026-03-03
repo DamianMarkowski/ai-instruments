@@ -122,6 +122,44 @@ struct ContentView: View {
                         Label("File I/O (No Memory Mapping)", systemImage: "doc")
                     }
                 }
+
+                Section("Energy") {
+                    Label("Continuous GPS Tracking", systemImage: "location.fill")
+                    Label("Excessive Timers (No Tolerance)", systemImage: "timer")
+                    Label("CADisplayLink (No Rate Limit)", systemImage: "display")
+                    Label("Background Processing", systemImage: "arrow.clockwise")
+                    Label("Motion Sensor Polling", systemImage: "gyroscope")
+                }
+
+                Section("Network") {
+                    Label("Plaintext HTTP URLs", systemImage: "lock.open")
+                    Label("Shared Session Only", systemImage: "network")
+                    Label("No Certificate Pinning", systemImage: "shield.slash")
+                    Label("WebSocket (No Heartbeat)", systemImage: "bolt.horizontal")
+                    Label("Heavy JSON Serialization", systemImage: "doc.text")
+                }
+
+                Section("Hangs") {
+                    Label("Synchronous File I/O", systemImage: "hourglass")
+                    Label("Heavy Sort on Main Thread", systemImage: "arrow.up.arrow.down")
+                    Label("Deep View Hierarchy", systemImage: "square.stack.3d.up")
+                    Label("No Prefetch / Diffable DS", systemImage: "tablecells")
+                    Label("Core Data on Main Thread", systemImage: "cylinder.split.1x2")
+                }
+
+                Section("App Launch") {
+                    Label("Eager Singleton Init", systemImage: "flag.checkered")
+                    Label("Multiple SDK Inits", systemImage: "puzzlepiece.extension")
+                    Label("Heavy AppDelegate Work", systemImage: "gearshape.2")
+                }
+
+                Section("File Activity") {
+                    Label("Sync File Ops", systemImage: "internaldrive")
+                    Label("Core Data No Batching", systemImage: "cylinder")
+                    Label("SQLite No WAL", systemImage: "tablecells.badge.ellipsis")
+                    Label("Temp Files No Cleanup", systemImage: "trash")
+                    Label("No File Protection", systemImage: "lock.open.fill")
+                }
             }
             .navigationTitle("TestApp Issues")
         }
