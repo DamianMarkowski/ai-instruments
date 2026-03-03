@@ -281,7 +281,7 @@ final class StartupAnalyzer {
         ])
 
         let sdkInitCount = analyzer.countAllEvidence(matchingAny: [
-            "configure(", "initialize(", "setup(", "start(",
+            "configure", "initialize", "setup", "start",
             "Firebase", "Crashlytics", "Analytics"
         ])
 

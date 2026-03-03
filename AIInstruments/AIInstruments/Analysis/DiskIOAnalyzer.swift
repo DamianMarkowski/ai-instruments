@@ -144,7 +144,8 @@ final class DiskIOAnalyzer {
 
         let coreDataCount = analyzer.countAllEvidence(matchingAny: [
             "NSManagedObjectContext", "NSFetchRequest",
-            "NSPersistentContainer", "NSPersistentStore"
+            "NSPersistentContainer", "NSPersistentStore",
+            "CoreData"
         ])
 
         let batchOpCount = analyzer.countAllEvidence(matchingAny: [
