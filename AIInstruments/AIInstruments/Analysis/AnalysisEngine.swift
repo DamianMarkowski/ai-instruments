@@ -96,23 +96,23 @@ final class AnalysisEngine: ObservableObject {
 
             // Leaks Analysis
             state = .analyzing(instrument: .leaks)
-            progress = 0.45
+            progress = 0.38
             progressMessage = "Analyzing memory leak patterns..."
 
             let leaksResult = await runLeaksAnalysis(binaryAnalyzer: binaryAnalyzer)
             results.append(leaksResult)
-            progress = 0.60
 
             // Concurrency Analysis
             state = .analyzing(instrument: .concurrency)
+            progress = 0.45
             progressMessage = "Analyzing Swift concurrency patterns..."
 
             let concurrencyResult = await runConcurrencyAnalysis(binaryAnalyzer: binaryAnalyzer)
             results.append(concurrencyResult)
-            progress = 0.75
 
             // Allocations Analysis
             state = .analyzing(instrument: .allocations)
+            progress = 0.52
             progressMessage = "Analyzing memory allocation patterns..."
 
             let allocationsResult = await runAllocationsAnalysis(
@@ -120,7 +120,50 @@ final class AnalysisEngine: ObservableObject {
                 binarySize: totalBinarySize
             )
             results.append(allocationsResult)
-            progress = 0.90
+
+            // Energy Analysis
+            state = .analyzing(instrument: .energy)
+            progress = 0.59
+            progressMessage = "Analyzing energy impact patterns..."
+
+            let energyResult = await runEnergyAnalysis(binaryAnalyzer: binaryAnalyzer)
+            results.append(energyResult)
+
+            // Network Analysis
+            state = .analyzing(instrument: .network)
+            progress = 0.66
+            progressMessage = "Analyzing networking patterns..."
+
+            let networkResult = await runNetworkAnalysis(binaryAnalyzer: binaryAnalyzer)
+            results.append(networkResult)
+
+            // Hangs Analysis
+            state = .analyzing(instrument: .hangs)
+            progress = 0.73
+            progressMessage = "Analyzing UI responsiveness patterns..."
+
+            let hangsResult = await runHangsAnalysis(binaryAnalyzer: binaryAnalyzer)
+            results.append(hangsResult)
+
+            // Startup Analysis
+            state = .analyzing(instrument: .startup)
+            progress = 0.80
+            progressMessage = "Analyzing app launch patterns..."
+
+            let startupResult = await runStartupAnalysis(
+                binaryAnalyzer: binaryAnalyzer,
+                binarySize: totalBinarySize
+            )
+            results.append(startupResult)
+
+            // Disk I/O Analysis
+            state = .analyzing(instrument: .diskIO)
+            progress = 0.87
+            progressMessage = "Analyzing file activity patterns..."
+
+            let diskIOResult = await runDiskIOAnalysis(binaryAnalyzer: binaryAnalyzer)
+            results.append(diskIOResult)
+            progress = 0.92
 
             // Step 4: Generate report
             progressMessage = "Generating report..."
@@ -175,6 +218,36 @@ final class AnalysisEngine: ObservableObject {
     private func runAllocationsAnalysis(binaryAnalyzer: BinaryAnalyzer, binarySize: Int) async -> AnalysisResult {
         await Task.detached(priority: .userInitiated) {
             AllocationsAnalyzer(binaryAnalyzer: binaryAnalyzer, binarySize: binarySize).analyze()
+        }.value
+    }
+
+    private func runEnergyAnalysis(binaryAnalyzer: BinaryAnalyzer) async -> AnalysisResult {
+        await Task.detached(priority: .userInitiated) {
+            EnergyAnalyzer(binaryAnalyzer: binaryAnalyzer).analyze()
+        }.value
+    }
+
+    private func runNetworkAnalysis(binaryAnalyzer: BinaryAnalyzer) async -> AnalysisResult {
+        await Task.detached(priority: .userInitiated) {
+            NetworkAnalyzer(binaryAnalyzer: binaryAnalyzer).analyze()
+        }.value
+    }
+
+    private func runHangsAnalysis(binaryAnalyzer: BinaryAnalyzer) async -> AnalysisResult {
+        await Task.detached(priority: .userInitiated) {
+            HangsAnalyzer(binaryAnalyzer: binaryAnalyzer).analyze()
+        }.value
+    }
+
+    private func runStartupAnalysis(binaryAnalyzer: BinaryAnalyzer, binarySize: Int) async -> AnalysisResult {
+        await Task.detached(priority: .userInitiated) {
+            StartupAnalyzer(binaryAnalyzer: binaryAnalyzer, binarySize: binarySize).analyze()
+        }.value
+    }
+
+    private func runDiskIOAnalysis(binaryAnalyzer: BinaryAnalyzer) async -> AnalysisResult {
+        await Task.detached(priority: .userInitiated) {
+            DiskIOAnalyzer(binaryAnalyzer: binaryAnalyzer).analyze()
         }.value
     }
 
