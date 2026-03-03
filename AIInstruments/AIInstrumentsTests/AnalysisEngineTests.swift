@@ -49,6 +49,11 @@ struct AnalysisEngineTests {
         expect(engine.result(for: .leaks)).to(beNil())
         expect(engine.result(for: .concurrency)).to(beNil())
         expect(engine.result(for: .allocations)).to(beNil())
+        expect(engine.result(for: .energy)).to(beNil())
+        expect(engine.result(for: .network)).to(beNil())
+        expect(engine.result(for: .hangs)).to(beNil())
+        expect(engine.result(for: .startup)).to(beNil())
+        expect(engine.result(for: .diskIO)).to(beNil())
     }
 
     // MARK: - State Equality
@@ -84,7 +89,7 @@ struct AnalysisEngineTests {
         expect(engine.report).toNot(beNil())
         expect(engine.report?.appName).to(equal("MockApp"))
         expect(engine.report?.bundleIdentifier).to(equal("com.mock.app"))
-        expect(engine.report?.results.count).to(equal(3))
+        expect(engine.report?.results.count).to(equal(8))
         expect(engine.loadedApp).toNot(beNil())
         expect(engine.machOInfo).toNot(beNil())
         expect(engine.progress).to(equal(1.0))
@@ -187,6 +192,16 @@ struct AnalysisEngineTests {
         expect(engine.result(for: .concurrency)?.instrument).to(equal(.concurrency))
         expect(engine.result(for: .allocations)).toNot(beNil())
         expect(engine.result(for: .allocations)?.instrument).to(equal(.allocations))
+        expect(engine.result(for: .energy)).toNot(beNil())
+        expect(engine.result(for: .energy)?.instrument).to(equal(.energy))
+        expect(engine.result(for: .network)).toNot(beNil())
+        expect(engine.result(for: .network)?.instrument).to(equal(.network))
+        expect(engine.result(for: .hangs)).toNot(beNil())
+        expect(engine.result(for: .hangs)?.instrument).to(equal(.hangs))
+        expect(engine.result(for: .startup)).toNot(beNil())
+        expect(engine.result(for: .startup)?.instrument).to(equal(.startup))
+        expect(engine.result(for: .diskIO)).toNot(beNil())
+        expect(engine.result(for: .diskIO)?.instrument).to(equal(.diskIO))
 
         Container.shared.reset()
     }

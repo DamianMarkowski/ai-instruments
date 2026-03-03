@@ -54,6 +54,11 @@ struct InstrumentTypeTests {
         expect(InstrumentType.leaks.rawValue).to(equal("Leaks"))
         expect(InstrumentType.concurrency.rawValue).to(equal("Swift Concurrency"))
         expect(InstrumentType.allocations.rawValue).to(equal("Allocations"))
+        expect(InstrumentType.energy.rawValue).to(equal("Energy"))
+        expect(InstrumentType.network.rawValue).to(equal("Network"))
+        expect(InstrumentType.hangs.rawValue).to(equal("Hangs"))
+        expect(InstrumentType.startup.rawValue).to(equal("App Launch"))
+        expect(InstrumentType.diskIO.rawValue).to(equal("File Activity"))
     }
 
     @Test("Instrument type id equals raw value")
@@ -72,9 +77,9 @@ struct InstrumentTypeTests {
         }
     }
 
-    @Test("There are exactly 3 instrument types")
+    @Test("There are exactly 8 instrument types")
     func caseCount() {
-        expect(InstrumentType.allCases.count).to(equal(3))
+        expect(InstrumentType.allCases.count).to(equal(8))
     }
 }
 
